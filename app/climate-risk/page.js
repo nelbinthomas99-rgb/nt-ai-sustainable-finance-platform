@@ -1,6 +1,39 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 
 export default function ClimateRiskPage() {
+  const [physicalRisk, setPhysicalRisk] = useState(0);
+  const [transitionRisk, setTransitionRisk] = useState(0);
+  const [financialExposure, setFinancialExposure] = useState(0);
+
+  const overallRisk =
+    (Number(physicalRisk) + Number(transitionRisk)) / 2;
+
+  let riskLevel = "Low";
+
+  if (overallRisk >= 70) {
+    riskLevel = "High";
+  } else if (overallRisk >= 40) {
+    riskLevel = "Medium";
+  }
+
+  const inputStyle = {
+    padding: "12px",
+    width: "100%",
+    maxWidth: "300px",
+    border: "1px solid #ccc",
+    borderRadius: "8px",
+    fontSize: "16px",
+  };
+
+  const cardStyle = {
+    background: "white",
+    padding: "25px",
+    borderRadius: "12px",
+  };
+
   return (
     <main
       style={{
@@ -22,85 +55,88 @@ export default function ClimateRiskPage() {
       </Link>
 
       <h1 style={{ color: "#0b5d4b", marginTop: "30px" }}>
-        Climate Risk Analysis
+        Climate Risk Assessment
       </h1>
 
       <p>
-        Identify and monitor financial risks arising from climate change,
-        regulation and the transition to a low-carbon economy.
+        Assess physical and transition climate risks and their potential
+        financial exposure.
       </p>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
           gap: "20px",
           marginTop: "30px",
         }}
       >
-        <RiskCard
-          title="Physical Climate Risk"
-          value="Low"
-          text="Exposure to flooding, heat, storms and other physical climate events."
-        />
+        <div style={cardStyle}>
+          <h2>Physical Risk</h2>
+          <p>Enter a score between 0 and 100.</p>
 
-        <RiskCard
-          title="Transition Risk"
-          value="Low"
-          text="Risk from regulation, carbon pricing, technology and market transition."
-        />
+          <input
+            type="number"
+            min="0"
+            max="100"
+            value={physicalRisk}
+            onChange={(e) => setPhysicalRisk(e.target.value)}
+            style={inputStyle}
+          />
+        </div>
 
-        <RiskCard
-          title="Financial Exposure"
-          value="£0.00"
-          text="Estimated financial value exposed to identified climate risks."
-        />
+        <div style={cardStyle}>
+          <h2>Transition Risk</h2>
+          <p>Enter a score between 0 and 100.</p>
 
-        <RiskCard
-          title="Climate Risk Score"
-          value="0 / 100"
-          text="Combined climate-risk assessment for the organisation."
-        />
+          <input
+            type="number"
+            min="0"
+            max="100"
+            value={transitionRisk}
+            onChange={(e) => setTransitionRisk(e.target.value)}
+            style={inputStyle}
+          />
+        </div>
 
-        <RiskCard
-          title="Carbon Price Exposure"
-          value="£0.00"
-          text="Potential financial exposure to future carbon pricing."
-        />
+        <div style={cardStyle}>
+          <h2>Financial Exposure</h2>
+          <p>Estimated amount exposed to climate-related risks.</p>
 
-        <RiskCard
-          title="High-Risk Assets"
-          value="0"
-          text="Assets or operations requiring additional climate-risk review."
-        />
+          <input
+            type="number"
+            min="0"
+            value={financialExposure}
+            onChange={(e) => setFinancialExposure(e.target.value)}
+            style={inputStyle}
+          />
+        </div>
+      </div>
+
+      <div
+        style={{
+          ...cardStyle,
+          marginTop: "25px",
+        }}
+      >
+        <h2>Climate Risk Summary</h2>
+
+        <p>
+          Overall Climate Risk Score:{" "}
+          <strong>{overallRisk.toFixed(1)} / 100</strong>
+        </p>
+
+        <p>
+          Risk Level: <strong>{riskLevel}</strong>
+        </p>
+
+        <p>
+          Financial Exposure:{" "}
+          <strong>
+            £{Number(financialExposure).toLocaleString()}
+          </strong>
+        </p>
       </div>
     </main>
   );
-}
-
-function RiskCard({ title, value, text }) {
-  return (
-    <div
-      style={{
-        background: "white",
-        padding: "25px",
-        borderRadius: "12px",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
-      }}
-    >
-      <h2>{title}</h2>
-
-      <p
-        style={{
-          fontSize: "26px",
-          fontWeight: "bold",
-          color: "#0b5d4b",
-        }}
-      >
-        {value}
-      </p>
-
-      <p>{text}</p>
-    </div>
-  );
-}
+}}
