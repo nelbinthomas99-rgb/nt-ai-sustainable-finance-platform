@@ -1,3 +1,4 @@
+import "./globals.css";
 export const metadata = {
   title: "N&T AI-Powered Sustainable Finance & Accounting",
   description:
