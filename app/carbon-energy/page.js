@@ -1,6 +1,41 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 
 export default function CarbonEnergyPage() {
+  const [electricity, setElectricity] = useState(0);
+  const [gas, setGas] = useState(0);
+  const [travel, setTravel] = useState(0);
+  const [renewable, setRenewable] = useState(0);
+
+  // Simple demo emission factors
+  const electricityEmissions = Number(electricity) * 0.193;
+  const gasEmissions = Number(gas) * 0.184;
+  const travelEmissions = Number(travel) * 0.171;
+
+  const totalEmissions =
+    electricityEmissions + gasEmissions + travelEmissions;
+
+  const netEmissions =
+    totalEmissions * (1 - Math.min(Number(renewable), 100) / 100);
+
+  const inputStyle = {
+    padding: "12px",
+    width: "100%",
+    maxWidth: "300px",
+    border: "1px solid #ccc",
+    borderRadius: "8px",
+    fontSize: "16px",
+    marginTop: "6px",
+  };
+
+  const cardStyle = {
+    background: "white",
+    padding: "25px",
+    borderRadius: "12px",
+  };
+
   return (
     <main
       style={{
@@ -26,59 +61,100 @@ export default function CarbonEnergyPage() {
       </h1>
 
       <p>
-        Monitor carbon emissions, renewable energy and energy efficiency.
+        Enter operational energy and travel data to estimate carbon emissions.
       </p>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
           gap: "20px",
           marginTop: "30px",
         }}
       >
-        <MetricCard
-          title="Scope 1 Emissions"
-          value="0 tCO2e"
-          text="Direct greenhouse gas emissions."
-        />
+        <div style={cardStyle}>
+          <h2>Electricity</h2>
+          <p>Electricity consumption (kWh)</p>
+          <input
+            type="number"
+            min="0"
+            value={electricity}
+            onChange={(e) => setElectricity(e.target.value)}
+            style={inputStyle}
+          />
+        </div>
 
-        <MetricCard
-          title="Scope 2 Emissions"
-          value="0 tCO2e"
-          text="Indirect emissions from purchased energy."
-        />
+        <div style={cardStyle}>
+          <h2>Gas / Fuel</h2>
+          <p>Gas or fuel consumption (kWh)</p>
+          <input
+            type="number"
+            min="0"
+            value={gas}
+            onChange={(e) => setGas(e.target.value)}
+            style={inputStyle}
+          />
+        </div>
 
-        <MetricCard
-          title="Renewable Energy"
-          value="0%"
-          text="Share of energy from renewable sources."
-        />
+        <div style={cardStyle}>
+          <h2>Business Travel</h2>
+          <p>Business travel distance (km)</p>
+          <input
+            type="number"
+            min="0"
+            value={travel}
+            onChange={(e) => setTravel(e.target.value)}
+            style={inputStyle}
+          />
+        </div>
 
-        <MetricCard
-          title="Energy Consumption"
-          value="0 kWh"
-          text="Total organisational energy consumption."
-        />
+        <div style={cardStyle}>
+          <h2>Renewable Energy</h2>
+          <p>Renewable energy share (%)</p>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            value={renewable}
+            onChange={(e) => setRenewable(e.target.value)}
+            style={inputStyle}
+          />
+        </div>
+      </div>
+
+      <div
+        style={{
+          ...cardStyle,
+          marginTop: "25px",
+        }}
+      >
+        <h2>Carbon Summary</h2>
+
+        <p>
+          Electricity Emissions:{" "}
+          <strong>{electricityEmissions.toFixed(2)} kg CO₂e</strong>
+        </p>
+
+        <p>
+          Gas/Fuel Emissions:{" "}
+          <strong>{gasEmissions.toFixed(2)} kg CO₂e</strong>
+        </p>
+
+        <p>
+          Travel Emissions:{" "}
+          <strong>{travelEmissions.toFixed(2)} kg CO₂e</strong>
+        </p>
+
+        <p>
+          Total Estimated Emissions:{" "}
+          <strong>{totalEmissions.toFixed(2)} kg CO₂e</strong>
+        </p>
+
+        <p>
+          Estimated Net Emissions after Renewable Adjustment:{" "}
+          <strong>{netEmissions.toFixed(2)} kg CO₂e</strong>
+        </p>
       </div>
     </main>
-  );
-}
-
-function MetricCard({ title, value, text }) {
-  return (
-    <div
-      style={{
-        background: "white",
-        padding: "25px",
-        borderRadius: "12px",
-      }}
-    >
-      <h2>{title}</h2>
-      <p style={{ fontSize: "26px", fontWeight: "bold", color: "#0b5d4b" }}>
-        {value}
-      </p>
-      <p>{text}</p>
-    </div>
   );
 }
