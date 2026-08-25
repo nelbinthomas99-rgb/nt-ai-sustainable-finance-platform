@@ -1,6 +1,26 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 
 export default function ESGPage() {
+  const [environmental, setEnvironmental] = useState(0);
+  const [social, setSocial] = useState(0);
+  const [governance, setGovernance] = useState(0);
+
+  const overall =
+    (Number(environmental) + Number(social) + Number(governance)) / 3;
+
+  const inputStyle = {
+    padding: "12px",
+    width: "100%",
+    maxWidth: "220px",
+    border: "1px solid #ccc",
+    borderRadius: "8px",
+    fontSize: "16px",
+    marginTop: "8px",
+  };
+
   return (
     <main
       style={{
@@ -25,53 +45,36 @@ export default function ESGPage() {
         ESG Performance
       </h1>
 
-      <p>
-        Track your Environmental, Social and Governance performance.
-      </p>
+      <p>Enter ESG scores from 0 to 100.</p>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
           gap: "20px",
           marginTop: "30px",
         }}
       >
-        <div
-          style={{
-            background: "white",
-            padding: "25px",
-            borderRadius: "12px",
-          }}
-        >
-          <h2>Environmental</h2>
-          <p>Score: 0/100</p>
-          <p>Track emissions, energy and environmental performance.</p>
-        </div>
+        <ESGCard
+          title="Environmental"
+          value={environmental}
+          onChange={setEnvironmental}
+          inputStyle={inputStyle}
+        />
 
-        <div
-          style={{
-            background: "white",
-            padding: "25px",
-            borderRadius: "12px",
-          }}
-        >
-          <h2>Social</h2>
-          <p>Score: 0/100</p>
-          <p>Track workforce, community and social indicators.</p>
-        </div>
+        <ESGCard
+          title="Social"
+          value={social}
+          onChange={setSocial}
+          inputStyle={inputStyle}
+        />
 
-        <div
-          style={{
-            background: "white",
-            padding: "25px",
-            borderRadius: "12px",
-          }}
-        >
-          <h2>Governance</h2>
-          <p>Score: 0/100</p>
-          <p>Track governance, compliance and business controls.</p>
-        </div>
+        <ESGCard
+          title="Governance"
+          value={governance}
+          onChange={setGovernance}
+          inputStyle={inputStyle}
+        />
 
         <div
           style={{
@@ -81,10 +84,45 @@ export default function ESGPage() {
           }}
         >
           <h2>Overall ESG Score</h2>
-          <p style={{ fontSize: "28px", fontWeight: "bold" }}>0/100</p>
-          <p>Your combined ESG performance score.</p>
+
+          <p
+            style={{
+              fontSize: "30px",
+              fontWeight: "bold",
+              color: "#0b5d4b",
+            }}
+          >
+            {overall.toFixed(1)} / 100
+          </p>
+
+          <p>Average of Environmental, Social and Governance scores.</p>
         </div>
       </div>
     </main>
+  );
+}
+
+function ESGCard({ title, value, onChange, inputStyle }) {
+  return (
+    <div
+      style={{
+        background: "white",
+        padding: "25px",
+        borderRadius: "12px",
+      }}
+    >
+      <h2>{title}</h2>
+
+      <input
+        type="number"
+        min="0"
+        max="100"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={inputStyle}
+      />
+
+      <p>Current score: {Number(value).toFixed(0)} / 100</p>
+    </div>
   );
 }
