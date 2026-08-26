@@ -1,25 +1,44 @@
+```jsx
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 export default function ClimateRiskPage() {
   const [physicalRisk, setPhysicalRisk] = useState(0);
   const [transitionRisk, setTransitionRisk] = useState(0);
   const [financialExposure, setFinancialExposure] = useState(0);
 
-  const totalRisk =
-    Number(physicalRisk) +
-    Number(transitionRisk) +
-    Number(financialExposure);
+  const physical = Number(physicalRisk) || 0;
+  const transition = Number(transitionRisk) || 0;
+  const exposure = Number(financialExposure) || 0;
 
-  let riskLevel = "Low";
+  const overallRisk = useMemo(() => {
+    return (physical + transition) / 2;
+  }, [physical, transition]);
 
-  if (totalRisk >= 150) {
-    riskLevel = "High";
-  } else if (totalRisk >= 75) {
-    riskLevel = "Medium";
-  }
+  const riskLevel = useMemo(() => {
+    if (overallRisk >= 70) return "High";
+    if (overallRisk >= 40) return "Medium";
+    return "Low";
+  }, [overallRisk]);
+
+  const cardStyle = {
+    background: "#ffffff",
+    padding: "24px",
+    borderRadius: "12px",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
+  };
+
+  const inputStyle = {
+    width: "100%",
+    maxWidth: "320px",
+    padding: "12px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
+    fontSize: "16px",
+    marginTop: "8px",
+  };
 
   return (
     <main
@@ -28,6 +47,7 @@ export default function ClimateRiskPage() {
         background: "#f4f7f6",
         minHeight: "100vh",
         padding: "40px",
+        color: "#1f2937",
       }}
     >
       <Link
@@ -35,7 +55,7 @@ export default function ClimateRiskPage() {
         style={{
           color: "#0b5d4b",
           textDecoration: "none",
-          fontWeight: "bold",
+          fontWeight: "700",
         }}
       >
         ← Back to Dashboard
@@ -45,31 +65,31 @@ export default function ClimateRiskPage() {
         style={{
           color: "#0b5d4b",
           marginTop: "30px",
+          marginBottom: "10px",
         }}
       >
         Climate Risk Assessment
       </h1>
 
       <p>
-        Assess physical, transition and financial climate risks for your
-        organisation.
+        Assess physical and transition climate risks and review potential
+        financial exposure.
       </p>
 
       <div
         style={{
-          background: "white",
-          padding: "30px",
-          borderRadius: "12px",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: "20px",
           marginTop: "30px",
         }}
       >
-        <h2>Climate Risk Data Input</h2>
-
-        <div style={{ marginBottom: "20px" }}>
-          <label>
-            Physical Risk Score (0–100)
-          </label>
-          <br />
+        <div style={cardStyle}>
+          <h2>Physical Risk</h2>
+          <p>
+            Score exposure to flooding, heat, storms and other physical climate
+            events.
+          </p>
 
           <input
             type="number"
@@ -77,19 +97,20 @@ export default function ClimateRiskPage() {
             max="100"
             value={physicalRisk}
             onChange={(e) => setPhysicalRisk(e.target.value)}
-            style={{
-              padding: "12px",
-              width: "300px",
-              marginTop: "8px",
-            }}
+            style={inputStyle}
           />
+
+          <p>
+            Current score: <strong>{physical}</strong> / 100
+          </p>
         </div>
 
-        <div style={{ marginBottom: "20px" }}>
-          <label>
-            Transition Risk Score (0–100)
-          </label>
-          <br />
+        <div style={cardStyle}>
+          <h2>Transition Risk</h2>
+          <p>
+            Score exposure to regulation, technology, carbon pricing and market
+            transition.
+          </p>
 
           <input
             type="number"
@@ -97,58 +118,76 @@ export default function ClimateRiskPage() {
             max="100"
             value={transitionRisk}
             onChange={(e) => setTransitionRisk(e.target.value)}
-            style={{
-              padding: "12px",
-              width: "300px",
-              marginTop: "8px",
-            }}
+            style={inputStyle}
           />
+
+          <p>
+            Current score: <strong>{transition}</strong> / 100
+          </p>
         </div>
 
-        <div style={{ marginBottom: "20px" }}>
-          <label>
-            Financial Exposure Score (0–100)
-          </label>
-          <br />
+        <div style={cardStyle}>
+          <h2>Financial Exposure</h2>
+          <p>
+            Enter the estimated financial value exposed to identified climate
+            risks.
+          </p>
 
           <input
             type="number"
             min="0"
-            max="100"
             value={financialExposure}
             onChange={(e) => setFinancialExposure(e.target.value)}
-            style={{
-              padding: "12px",
-              width: "300px",
-              marginTop: "8px",
-            }}
+            style={inputStyle}
           />
+
+          <p>
+            Exposure:{" "}
+            <strong>
+              £
+              {exposure.toLocaleString("en-GB", {
+                maximumFractionDigits: 2,
+              })}
+            </strong>
+          </p>
         </div>
+      </div>
 
-        <hr style={{ margin: "30px 0" }} />
-
+      <div
+        style={{
+          ...cardStyle,
+          marginTop: "24px",
+          borderLeft: "5px solid #0b5d4b",
+        }}
+      >
         <h2>Climate Risk Summary</h2>
 
         <p>
-          Physical Risk: <strong>{physicalRisk}</strong>
+          Overall Climate Risk Score:{" "}
+          <strong>{overallRisk.toFixed(1)} / 100</strong>
         </p>
 
         <p>
-          Transition Risk: <strong>{transitionRisk}</strong>
+          Risk Level: <strong>{riskLevel}</strong>
         </p>
 
         <p>
-          Financial Exposure: <strong>{financialExposure}</strong>
+          Estimated Financial Exposure:{" "}
+          <strong>
+            £
+            {exposure.toLocaleString("en-GB", {
+              maximumFractionDigits: 2,
+            })}
+          </strong>
         </p>
 
-        <h3 style={{ color: "#0b5d4b" }}>
-          Total Risk Score: {totalRisk}
-        </h3>
-
-        <h3>
-          Risk Level: {riskLevel}
-        </h3>
+        <p>
+          This is a prototype decision-support assessment and should not be
+          treated as a regulatory climate-risk opinion or assurance conclusion.
+        </p>
       </div>
     </main>
   );
 }
+```
+
