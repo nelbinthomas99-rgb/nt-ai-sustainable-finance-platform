@@ -68,13 +68,7 @@ export default function Home() {
           text="Access your client accounting and reporting documents."
           href="/documents"
         />
-            
-        <DashboardCard
-           title="Climate Risk"
-           text="Assess physical and transition climate risks."
-           href="/climate-risk"
-         />
-             
+          
       </div>
     </main>
   );
