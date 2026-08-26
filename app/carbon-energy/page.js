@@ -1,3 +1,4 @@
+```jsx
 "use client";
 
 import Link from "next/link";
@@ -7,15 +8,51 @@ export default function CarbonEnergyPage() {
   const [electricity, setElectricity] = useState("");
   const [gas, setGas] = useState("");
   const [travel, setTravel] = useState("");
+  const [renewable, setRenewable] = useState("");
 
-  const electricityEmissions = (Number(electricity) || 0) * 0.193;
-  const gasEmissions = (Number(gas) || 0) * 0.184;
-  const travelEmissions = (Number(travel) || 0) * 0.171;
+  const electricityFactor = 0.193;
+  const gasFactor = 0.184;
+  const travelFactor = 0.171;
+
+  const electricityEmissions =
+    (Number(electricity) || 0) * electricityFactor;
+
+  const gasEmissions =
+    (Number(gas) || 0) * gasFactor;
+
+  const travelEmissions =
+    (Number(travel) || 0) * travelFactor;
 
   const totalEmissions =
     electricityEmissions +
     gasEmissions +
     travelEmissions;
+
+  const renewablePercentage = Math.min(
+    Math.max(Number(renewable) || 0, 0),
+    100
+  );
+
+  const estimatedNetEmissions =
+    totalEmissions *
+    (1 - renewablePercentage / 100);
+
+  const cardStyle = {
+    background: "white",
+    padding: "25px",
+    borderRadius: "12px",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
+  };
+
+  const inputStyle = {
+    width: "100%",
+    maxWidth: "300px",
+    padding: "12px",
+    marginTop: "8px",
+    border: "1px solid #cccccc",
+    borderRadius: "8px",
+    fontSize: "16px",
+  };
 
   return (
     <main
@@ -55,7 +92,7 @@ export default function CarbonEnergyPage() {
         style={{
           display: "grid",
           gridTemplateColumns:
-            "repeat(auto-fit, minmax(250px, 1fr))",
+            "repeat(auto-fit, minmax(260px, 1fr))",
           gap: "20px",
           marginTop: "30px",
         }}
@@ -76,8 +113,7 @@ export default function CarbonEnergyPage() {
           />
 
           <p>
-            Estimated emissions:
-            <br />
+            Estimated emissions:{" "}
             <strong>
               {electricityEmissions.toFixed(2)} kg CO₂e
             </strong>
@@ -87,7 +123,7 @@ export default function CarbonEnergyPage() {
         <div style={cardStyle}>
           <h2>Gas / Fuel</h2>
 
-          <p>Gas consumption (kWh)</p>
+          <p>Gas or fuel consumption (kWh)</p>
 
           <input
             type="number"
@@ -100,8 +136,7 @@ export default function CarbonEnergyPage() {
           />
 
           <p>
-            Estimated emissions:
-            <br />
+            Estimated emissions:{" "}
             <strong>
               {gasEmissions.toFixed(2)} kg CO₂e
             </strong>
@@ -111,7 +146,7 @@ export default function CarbonEnergyPage() {
         <div style={cardStyle}>
           <h2>Business Travel</h2>
 
-          <p>Travel distance (km)</p>
+          <p>Business travel distance (km)</p>
 
           <input
             type="number"
@@ -124,10 +159,33 @@ export default function CarbonEnergyPage() {
           />
 
           <p>
-            Estimated emissions:
-            <br />
+            Estimated emissions:{" "}
             <strong>
               {travelEmissions.toFixed(2)} kg CO₂e
+            </strong>
+          </p>
+        </div>
+
+        <div style={cardStyle}>
+          <h2>Renewable Energy</h2>
+
+          <p>Renewable energy share (%)</p>
+
+          <input
+            type="number"
+            min="0"
+            max="100"
+            value={renewable}
+            onChange={(e) =>
+              setRenewable(e.target.value)
+            }
+            style={inputStyle}
+          />
+
+          <p>
+            Renewable share:{" "}
+            <strong>
+              {renewablePercentage.toFixed(1)}%
             </strong>
           </p>
         </div>
@@ -149,7 +207,7 @@ export default function CarbonEnergyPage() {
         </p>
 
         <p>
-          Gas Emissions:{" "}
+          Gas/Fuel Emissions:{" "}
           <strong>
             {gasEmissions.toFixed(2)} kg CO₂e
           </strong>
@@ -164,17 +222,30 @@ export default function CarbonEnergyPage() {
 
         <hr />
 
-        <h2 style={{ color: "#0b5d4b" }}>
-          Total Estimated Emissions
-        </h2>
+        <p>
+          Total Estimated Emissions:{" "}
+          <strong>
+            {totalEmissions.toFixed(2)} kg CO₂e
+          </strong>
+        </p>
+
+        <p>
+          Renewable Energy Share:{" "}
+          <strong>
+            {renewablePercentage.toFixed(1)}%
+          </strong>
+        </p>
 
         <p
           style={{
-            fontSize: "28px",
-            fontWeight: "bold",
+            fontSize: "22px",
+            color: "#0b5d4b",
           }}
         >
-          {totalEmissions.toFixed(2)} kg CO₂e
+          Estimated Net Emissions:{" "}
+          <strong>
+            {estimatedNetEmissions.toFixed(2)} kg CO₂e
+          </strong>
         </p>
       </div>
 
@@ -184,33 +255,16 @@ export default function CarbonEnergyPage() {
           marginTop: "25px",
         }}
       >
-        <h2>Important</h2>
+        <h2>Prototype Notice</h2>
 
         <p>
-          This calculator is currently a prototype.
-          Emission factors should be updated to verified
-          UK Government conversion factors before
-          production or professional reporting use.
+          This calculator currently uses prototype emission
+          factors for demonstration. Before professional or
+          regulatory use, replace them with verified and
+          current UK Government conversion factors.
         </p>
       </div>
     </main>
   );
 }
-
-const cardStyle = {
-  background: "white",
-  padding: "25px",
-  borderRadius: "12px",
-  boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
-};
-
-const inputStyle = {
-  width: "100%",
-  maxWidth: "300px",
-  padding: "12px",
-  border: "1px solid #cccccc",
-  borderRadius: "8px",
-  fontSize: "16px",
-  marginTop: "8px",
-  marginBottom: "15px",
-};  
+```
