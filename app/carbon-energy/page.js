@@ -9,16 +9,34 @@ export default function CarbonEnergyPage() {
   const [travel, setTravel] = useState(0);
   const [renewable, setRenewable] = useState(0);
 
-  // Demo emission factors
-  const electricityEmissions = Number(electricity) * 0.193;
-  const gasEmissions = Number(gas) * 0.184;
-  const travelEmissions = Number(travel) * 0.171;
+  // Prototype emission factors.
+  // Replace with verified UK Government factors for production use.
+  const electricityFactor = 0.193;
+  const gasFactor = 0.184;
+  const travelFactor = 0.171;
+
+  const electricityEmissions =
+    Number(electricity) * electricityFactor;
+
+  const gasEmissions =
+    Number(gas) * gasFactor;
+
+  const travelEmissions =
+    Number(travel) * travelFactor;
 
   const totalEmissions =
-    electricityEmissions + gasEmissions + travelEmissions;
+    electricityEmissions +
+    gasEmissions +
+    travelEmissions;
 
-  const netEmissions =
-    totalEmissions * (1 - Math.min(Number(renewable), 100) / 100);
+  const renewablePercentage = Math.min(
+    Math.max(Number(renewable), 0),
+    100
+  );
+
+  const estimatedNetEmissions =
+    totalEmissions *
+    (1 - renewablePercentage / 100);
 
   const inputStyle = {
     padding: "12px",
@@ -27,13 +45,14 @@ export default function CarbonEnergyPage() {
     border: "1px solid #ccc",
     borderRadius: "8px",
     fontSize: "16px",
-    marginTop: "6px",
+    marginTop: "8px",
   };
 
   const cardStyle = {
     background: "white",
     padding: "25px",
     borderRadius: "12px",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
   };
 
   return (
@@ -56,67 +75,90 @@ export default function CarbonEnergyPage() {
         ← Back to Dashboard
       </Link>
 
-      <h1 style={{ color: "#0b5d4b", marginTop: "30px" }}>
+      <h1
+        style={{
+          color: "#0b5d4b",
+          marginTop: "30px",
+        }}
+      >
         Carbon & Energy
       </h1>
 
       <p>
-        Enter energy and business travel data to estimate carbon emissions.
+        Enter operational energy and business travel
+        information to estimate carbon emissions.
       </p>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+          gridTemplateColumns:
+            "repeat(auto-fit, minmax(260px, 1fr))",
           gap: "20px",
           marginTop: "30px",
         }}
       >
         <div style={cardStyle}>
           <h2>Electricity</h2>
+
           <p>Electricity consumption (kWh)</p>
+
           <input
             type="number"
             min="0"
             value={electricity}
-            onChange={(e) => setElectricity(e.target.value)}
+            onChange={(e) =>
+              setElectricity(e.target.value)
+            }
             style={inputStyle}
           />
         </div>
 
         <div style={cardStyle}>
           <h2>Gas / Fuel</h2>
+
           <p>Gas or fuel consumption (kWh)</p>
+
           <input
             type="number"
             min="0"
             value={gas}
-            onChange={(e) => setGas(e.target.value)}
+            onChange={(e) =>
+              setGas(e.target.value)
+            }
             style={inputStyle}
           />
         </div>
 
         <div style={cardStyle}>
           <h2>Business Travel</h2>
+
           <p>Business travel distance (km)</p>
+
           <input
             type="number"
             min="0"
             value={travel}
-            onChange={(e) => setTravel(e.target.value)}
+            onChange={(e) =>
+              setTravel(e.target.value)
+            }
             style={inputStyle}
           />
         </div>
 
         <div style={cardStyle}>
           <h2>Renewable Energy</h2>
+
           <p>Renewable energy share (%)</p>
+
           <input
             type="number"
             min="0"
             max="100"
             value={renewable}
-            onChange={(e) => setRenewable(e.target.value)}
+            onChange={(e) =>
+              setRenewable(e.target.value)
+            }
             style={inputStyle}
           />
         </div>
@@ -132,29 +174,63 @@ export default function CarbonEnergyPage() {
 
         <p>
           Electricity Emissions:{" "}
-          <strong>{electricityEmissions.toFixed(2)} kg CO₂e</strong>
+          <strong>
+            {electricityEmissions.toFixed(2)} kg CO₂e
+          </strong>
         </p>
 
         <p>
           Gas/Fuel Emissions:{" "}
-          <strong>{gasEmissions.toFixed(2)} kg CO₂e</strong>
+          <strong>
+            {gasEmissions.toFixed(2)} kg CO₂e
+          </strong>
         </p>
 
         <p>
-          Travel Emissions:{" "}
-          <strong>{travelEmissions.toFixed(2)} kg CO₂e</strong>
+          Business Travel Emissions:{" "}
+          <strong>
+            {travelEmissions.toFixed(2)} kg CO₂e
+          </strong>
         </p>
+
+        <hr />
 
         <p>
           Total Estimated Emissions:{" "}
-          <strong>{totalEmissions.toFixed(2)} kg CO₂e</strong>
+          <strong>
+            {totalEmissions.toFixed(2)} kg CO₂e
+          </strong>
         </p>
 
         <p>
-          Estimated Net Emissions after Renewable Adjustment:{" "}
-          <strong>{netEmissions.toFixed(2)} kg CO₂e</strong>
+          Renewable Energy Share:{" "}
+          <strong>
+            {renewablePercentage.toFixed(1)}%
+          </strong>
+        </p>
+
+        <p>
+          Estimated Net Emissions:{" "}
+          <strong>
+            {estimatedNetEmissions.toFixed(2)} kg CO₂e
+          </strong>
+        </p>
+      </div>
+
+      <div
+        style={{
+          ...cardStyle,
+          marginTop: "25px",
+        }}
+      >
+        <h2>Prototype Notice</h2>
+
+        <p>
+          These calculations are currently for platform
+          demonstration purposes. Production calculations
+          should use verified and current emissions factors.
         </p>
       </div>
     </main>
   );
-}
+}}
