@@ -1,3 +1,4 @@
+```jsx
 "use client";
 
 import Link from "next/link";
@@ -9,8 +10,6 @@ export default function CarbonEnergyPage() {
   const [travel, setTravel] = useState(0);
   const [renewable, setRenewable] = useState(0);
 
-  // Prototype emission factors.
-  // Replace with verified UK Government factors for production use.
   const electricityFactor = 0.193;
   const gasFactor = 0.184;
   const travelFactor = 0.171;
@@ -100,9 +99,7 @@ export default function CarbonEnergyPage() {
       >
         <div style={cardStyle}>
           <h2>Electricity</h2>
-
           <p>Electricity consumption (kWh)</p>
-
           <input
             type="number"
             min="0"
@@ -116,9 +113,7 @@ export default function CarbonEnergyPage() {
 
         <div style={cardStyle}>
           <h2>Gas / Fuel</h2>
-
           <p>Gas or fuel consumption (kWh)</p>
-
           <input
             type="number"
             min="0"
@@ -132,9 +127,7 @@ export default function CarbonEnergyPage() {
 
         <div style={cardStyle}>
           <h2>Business Travel</h2>
-
           <p>Business travel distance (km)</p>
-
           <input
             type="number"
             min="0"
@@ -148,9 +141,7 @@ export default function CarbonEnergyPage() {
 
         <div style={cardStyle}>
           <h2>Renewable Energy</h2>
-
           <p>Renewable energy share (%)</p>
-
           <input
             type="number"
             min="0"
@@ -224,7 +215,6 @@ export default function CarbonEnergyPage() {
         }}
       >
         <h2>Prototype Notice</h2>
-
         <p>
           These calculations are currently for platform
           demonstration purposes. Production calculations
@@ -233,4 +223,6 @@ export default function CarbonEnergyPage() {
       </div>
     </main>
   );
-}}
+}
+```
+
