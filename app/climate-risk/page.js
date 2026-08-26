@@ -8,31 +8,18 @@ export default function ClimateRiskPage() {
   const [transitionRisk, setTransitionRisk] = useState(0);
   const [financialExposure, setFinancialExposure] = useState(0);
 
-  const overallRisk =
-    (Number(physicalRisk) + Number(transitionRisk)) / 2;
+  const totalRisk =
+    Number(physicalRisk) +
+    Number(transitionRisk) +
+    Number(financialExposure);
 
   let riskLevel = "Low";
 
-  if (overallRisk >= 70) {
+  if (totalRisk >= 150) {
     riskLevel = "High";
-  } else if (overallRisk >= 40) {
+  } else if (totalRisk >= 75) {
     riskLevel = "Medium";
   }
-
-  const inputStyle = {
-    padding: "12px",
-    width: "100%",
-    maxWidth: "300px",
-    border: "1px solid #ccc",
-    borderRadius: "8px",
-    fontSize: "16px",
-  };
-
-  const cardStyle = {
-    background: "white",
-    padding: "25px",
-    borderRadius: "12px",
-  };
 
   return (
     <main
@@ -54,26 +41,35 @@ export default function ClimateRiskPage() {
         ← Back to Dashboard
       </Link>
 
-      <h1 style={{ color: "#0b5d4b", marginTop: "30px" }}>
+      <h1
+        style={{
+          color: "#0b5d4b",
+          marginTop: "30px",
+        }}
+      >
         Climate Risk Assessment
       </h1>
 
       <p>
-        Assess physical and transition climate risks and their potential
-        financial exposure.
+        Assess physical, transition and financial climate risks for your
+        organisation.
       </p>
 
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: "20px",
+          background: "white",
+          padding: "30px",
+          borderRadius: "12px",
           marginTop: "30px",
         }}
       >
-        <div style={cardStyle}>
-          <h2>Physical Risk</h2>
-          <p>Enter a score between 0 and 100.</p>
+        <h2>Climate Risk Data Input</h2>
+
+        <div style={{ marginBottom: "20px" }}>
+          <label>
+            Physical Risk Score (0–100)
+          </label>
+          <br />
 
           <input
             type="number"
@@ -81,13 +77,19 @@ export default function ClimateRiskPage() {
             max="100"
             value={physicalRisk}
             onChange={(e) => setPhysicalRisk(e.target.value)}
-            style={inputStyle}
+            style={{
+              padding: "12px",
+              width: "300px",
+              marginTop: "8px",
+            }}
           />
         </div>
 
-        <div style={cardStyle}>
-          <h2>Transition Risk</h2>
-          <p>Enter a score between 0 and 100.</p>
+        <div style={{ marginBottom: "20px" }}>
+          <label>
+            Transition Risk Score (0–100)
+          </label>
+          <br />
 
           <input
             type="number"
@@ -95,48 +97,58 @@ export default function ClimateRiskPage() {
             max="100"
             value={transitionRisk}
             onChange={(e) => setTransitionRisk(e.target.value)}
-            style={inputStyle}
+            style={{
+              padding: "12px",
+              width: "300px",
+              marginTop: "8px",
+            }}
           />
         </div>
 
-        <div style={cardStyle}>
-          <h2>Financial Exposure</h2>
-          <p>Estimated amount exposed to climate-related risks.</p>
+        <div style={{ marginBottom: "20px" }}>
+          <label>
+            Financial Exposure Score (0–100)
+          </label>
+          <br />
 
           <input
             type="number"
             min="0"
+            max="100"
             value={financialExposure}
             onChange={(e) => setFinancialExposure(e.target.value)}
-            style={inputStyle}
+            style={{
+              padding: "12px",
+              width: "300px",
+              marginTop: "8px",
+            }}
           />
         </div>
-      </div>
 
-      <div
-        style={{
-          ...cardStyle,
-          marginTop: "25px",
-        }}
-      >
+        <hr style={{ margin: "30px 0" }} />
+
         <h2>Climate Risk Summary</h2>
 
         <p>
-          Overall Climate Risk Score:{" "}
-          <strong>{overallRisk.toFixed(1)} / 100</strong>
+          Physical Risk: <strong>{physicalRisk}</strong>
         </p>
 
         <p>
-          Risk Level: <strong>{riskLevel}</strong>
+          Transition Risk: <strong>{transitionRisk}</strong>
         </p>
 
         <p>
-          Financial Exposure:{" "}
-          <strong>
-            £{Number(financialExposure).toLocaleString()}
-          </strong>
+          Financial Exposure: <strong>{financialExposure}</strong>
         </p>
+
+        <h3 style={{ color: "#0b5d4b" }}>
+          Total Risk Score: {totalRisk}
+        </h3>
+
+        <h3>
+          Risk Level: {riskLevel}
+        </h3>
       </div>
     </main>
   );
-}}
+}
