@@ -9,7 +9,7 @@ export default function CarbonEnergyPage() {
   const [travel, setTravel] = useState(0);
   const [renewable, setRenewable] = useState(0);
 
-  // Simple demo emission factors
+  // Demo emission factors
   const electricityEmissions = Number(electricity) * 0.193;
   const gasEmissions = Number(gas) * 0.184;
   const travelEmissions = Number(travel) * 0.171;
@@ -61,7 +61,7 @@ export default function CarbonEnergyPage() {
       </h1>
 
       <p>
-        Enter operational energy and travel data to estimate carbon emissions.
+        Enter energy and business travel data to estimate carbon emissions.
       </p>
 
       <div
