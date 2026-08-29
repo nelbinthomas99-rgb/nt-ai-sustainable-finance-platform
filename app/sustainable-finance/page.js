@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -18,23 +19,6 @@ export default function SustainableFinancePage() {
 
   const sustainableShare =
     total > 0 ? (sustainableFinanceTotal / total) * 100 : 0;
-
-  const cardStyle = {
-    background: "white",
-    padding: "25px",
-    borderRadius: "12px",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
-  };
-
-  const inputStyle = {
-    width: "100%",
-    maxWidth: "320px",
-    padding: "12px",
-    marginTop: "8px",
-    border: "1px solid #cccccc",
-    borderRadius: "8px",
-    fontSize: "16px",
-  };
 
   return (
     <main
@@ -60,135 +44,159 @@ export default function SustainableFinancePage() {
         style={{
           color: "#0b5d4b",
           marginTop: "30px",
+          marginBottom: "10px",
         }}
       >
         Sustainable Finance
       </h1>
 
-      <p>
+      <p
+        style={{
+          color: "#555",
+          marginBottom: "30px",
+        }}
+      >
         Track green investment, sustainable lending and ESG-linked finance.
       </p>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(260px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
           gap: "20px",
-          marginTop: "30px",
         }}
       >
-        <div style={cardStyle}>
+        <div
+          style={{
+            background: "white",
+            padding: "22px",
+            borderRadius: "12px",
+          }}
+        >
           <h2>Green Investment</h2>
-          <p>Value of green or environmentally aligned investment (£)</p>
 
           <input
             type="number"
-            min="0"
             value={greenInvestment}
             onChange={(e) => setGreenInvestment(e.target.value)}
-            style={inputStyle}
+            placeholder="Enter amount"
+            style={{
+              width: "100%",
+              padding: "12px",
+              marginTop: "10px",
+              boxSizing: "border-box",
+            }}
           />
         </div>
 
-        <div style={cardStyle}>
+        <div
+          style={{
+            background: "white",
+            padding: "22px",
+            borderRadius: "12px",
+          }}
+        >
           <h2>Sustainable Loans</h2>
-          <p>Value of sustainable or green lending (£)</p>
 
           <input
             type="number"
-            min="0"
             value={sustainableLoans}
             onChange={(e) => setSustainableLoans(e.target.value)}
-            style={inputStyle}
+            placeholder="Enter amount"
+            style={{
+              width: "100%",
+              padding: "12px",
+              marginTop: "10px",
+              boxSizing: "border-box",
+            }}
           />
         </div>
 
-        <div style={cardStyle}>
+        <div
+          style={{
+            background: "white",
+            padding: "22px",
+            borderRadius: "12px",
+          }}
+        >
           <h2>ESG-Linked Finance</h2>
-          <p>Finance linked to sustainability or ESG targets (£)</p>
 
           <input
             type="number"
-            min="0"
             value={esgLinkedFinance}
             onChange={(e) => setEsgLinkedFinance(e.target.value)}
-            style={inputStyle}
+            placeholder="Enter amount"
+            style={{
+              width: "100%",
+              padding: "12px",
+              marginTop: "10px",
+              boxSizing: "border-box",
+            }}
           />
         </div>
 
-        <div style={cardStyle}>
+        <div
+          style={{
+            background: "white",
+            padding: "22px",
+            borderRadius: "12px",
+          }}
+        >
           <h2>Total Finance</h2>
-          <p>Total finance or investment portfolio (£)</p>
 
           <input
             type="number"
-            min="0"
             value={totalFinance}
             onChange={(e) => setTotalFinance(e.target.value)}
-            style={inputStyle}
+            placeholder="Enter total finance"
+            style={{
+              width: "100%",
+              padding: "12px",
+              marginTop: "10px",
+              boxSizing: "border-box",
+            }}
           />
         </div>
       </div>
 
       <div
         style={{
-          ...cardStyle,
-          marginTop: "25px",
+          background: "white",
+          padding: "25px",
+          borderRadius: "12px",
+          marginTop: "30px",
         }}
       >
         <h2>Sustainable Finance Summary</h2>
 
         <p>
-          Green Investment:{" "}
-          <strong>£{green.toLocaleString("en-GB")}</strong>
+          Green Investment: <strong>£{green.toLocaleString()}</strong>
         </p>
 
         <p>
-          Sustainable Loans:{" "}
-          <strong>£{loans.toLocaleString("en-GB")}</strong>
+          Sustainable Loans: <strong>£{loans.toLocaleString()}</strong>
         </p>
 
         <p>
-          ESG-Linked Finance:{" "}
-          <strong>£{esg.toLocaleString("en-GB")}</strong>
+          ESG-Linked Finance: <strong>£{esg.toLocaleString()}</strong>
         </p>
 
-        <hr />
+        <hr
+          style={{
+            margin: "20px 0",
+          }}
+        />
 
         <p>
           Total Sustainable Finance:{" "}
-          <strong>
-            £{sustainableFinanceTotal.toLocaleString("en-GB")}
-          </strong>
+          <strong>£{sustainableFinanceTotal.toLocaleString()}</strong>
         </p>
-
-        <p
-          style={{
-            fontSize: "22px",
-            color: "#0b5d4b",
-          }}
-        >
-          Sustainable Finance Share:{" "}
-          <strong>{sustainableShare.toFixed(1)}%</strong>
-        </p>
-      </div>
-
-      <div
-        style={{
-          ...cardStyle,
-          marginTop: "25px",
-        }}
-      >
-        <h2>Prototype Notice</h2>
 
         <p>
-          This module is currently a decision-support prototype.
-          Sustainable or green classifications should be validated
-          against the relevant framework before professional or
-          regulatory reporting.
+          Sustainable Share:{" "}
+          <strong>{sustainableShare.toFixed(1)}%</strong>
         </p>
       </div>
     </main>
   );
-}}
+}
