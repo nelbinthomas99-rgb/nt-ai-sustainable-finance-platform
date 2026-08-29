@@ -63,11 +63,6 @@ export default function Home() {
           href="/ai-insights"
         />
 
-        <DashboardCard
-          title="Documents"
-          text="Access your client accounting and reporting documents."
-          href="/documents"
-        />
           
       </div>
     </main>
