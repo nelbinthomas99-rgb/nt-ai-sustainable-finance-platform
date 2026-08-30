@@ -19,20 +19,38 @@ export default function FinancialPage() {
   const [cashBalance, setCashBalance] = useState(0);
 
   useEffect(() => {
-    async function checkUser() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    let mounted = true;
 
-      if (!session) {
+    async function checkLogin() {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (error || !user) {
         router.replace("/login");
         return;
       }
 
-      setLoading(false);
+      if (mounted) {
+        setLoading(false);
+      }
     }
 
-    checkUser();
+    checkLogin();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
+        router.replace("/login");
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [router]);
 
   const netProfit = Number(revenue) - Number(expenses);
@@ -50,7 +68,15 @@ export default function FinancialPage() {
 
   if (loading) {
     return (
-      <main style={{ fontFamily: "Arial, sans-serif", padding: "40px" }}>
+      <main
+        style={{
+          minHeight: "100vh",
+          fontFamily: "Arial, sans-serif",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
         Checking secure login...
       </main>
     );
@@ -76,14 +102,16 @@ export default function FinancialPage() {
         ← Back to Dashboard
       </Link>
 
-      <h1 style={{ color: "#0b5d4b", marginTop: "30px" }}>
+      <h1
+        style={{
+          color: "#0b5d4b",
+          marginTop: "30px",
+        }}
+      >
         Financial Overview
       </h1>
 
-      <p>
-        Enter client financial information to calculate the current financial
-        position.
-      </p>
+      <p>Enter your financial information below.</p>
 
       <div
         style={{
@@ -95,67 +123,58 @@ export default function FinancialPage() {
       >
         <h2>Financial Data Input</h2>
 
-        <div>
-          <label>Revenue (£)</label>
-          <br />
+        <label>Revenue (£)</label>
+        <br />
 
-          <input
-            type="number"
-            value={revenue}
-            onChange={(e) => setRevenue(e.target.value)}
-            style={inputStyle}
-          />
-        </div>
+        <input
+          type="number"
+          value={revenue}
+          onChange={(e) => setRevenue(e.target.value)}
+          style={inputStyle}
+        />
 
-        <div>
-          <label>Expenses (£)</label>
-          <br />
+        <br />
 
-          <input
-            type="number"
-            value={expenses}
-            onChange={(e) => setExpenses(e.target.value)}
-            style={inputStyle}
-          />
-        </div>
+        <label>Expenses (£)</label>
+        <br />
 
-        <div>
-          <label>Cash Balance (£)</label>
-          <br />
+        <input
+          type="number"
+          value={expenses}
+          onChange={(e) => setExpenses(e.target.value)}
+          style={inputStyle}
+        />
 
-          <input
-            type="number"
-            value={cashBalance}
-            onChange={(e) => setCashBalance(e.target.value)}
-            style={inputStyle}
-          />
-        </div>
-      </div>
+        <br />
 
-      <div
-        style={{
-          background: "white",
-          padding: "30px",
-          borderRadius: "12px",
-          marginTop: "25px",
-        }}
-      >
+        <label>Cash Balance (£)</label>
+        <br />
+
+        <input
+          type="number"
+          value={cashBalance}
+          onChange={(e) => setCashBalance(e.target.value)}
+          style={inputStyle}
+        />
+
+        <hr style={{ margin: "10px 0 25px" }} />
+
         <h2>Financial Summary</h2>
 
         <p>
-          Revenue: <strong>£{Number(revenue).toLocaleString()}</strong>
+          Revenue: <strong>£{Number(revenue).toFixed(2)}</strong>
         </p>
 
         <p>
-          Expenses: <strong>£{Number(expenses).toLocaleString()}</strong>
+          Expenses: <strong>£{Number(expenses).toFixed(2)}</strong>
         </p>
 
         <p>
-          Net Profit: <strong>£{netProfit.toLocaleString()}</strong>
+          Net Profit: <strong>£{netProfit.toFixed(2)}</strong>
         </p>
 
         <p>
-          Cash Balance: <strong>£{Number(cashBalance).toLocaleString()}</strong>
+          Cash Balance: <strong>£{Number(cashBalance).toFixed(2)}</strong>
         </p>
       </div>
     </main>
