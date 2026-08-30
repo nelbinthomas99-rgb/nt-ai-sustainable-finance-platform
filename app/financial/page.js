@@ -1,12 +1,39 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+);
 
 export default function FinancialPage() {
+  const router = useRouter();
+
+  const [loading, setLoading] = useState(true);
   const [revenue, setRevenue] = useState(0);
   const [expenses, setExpenses] = useState(0);
   const [cashBalance, setCashBalance] = useState(0);
+
+  useEffect(() => {
+    async function checkUser() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        router.replace("/login");
+        return;
+      }
+
+      setLoading(false);
+    }
+
+    checkUser();
+  }, [router]);
 
   const netProfit = Number(revenue) - Number(expenses);
 
@@ -20,6 +47,14 @@ export default function FinancialPage() {
     marginTop: "6px",
     marginBottom: "18px",
   };
+
+  if (loading) {
+    return (
+      <main style={{ fontFamily: "Arial, sans-serif", padding: "40px" }}>
+        Checking secure login...
+      </main>
+    );
+  }
 
   return (
     <main
@@ -41,69 +76,87 @@ export default function FinancialPage() {
         ← Back to Dashboard
       </Link>
 
-      <h1 style={{ color: "#0b5d4b" }}>Financial Overview</h1>
+      <h1 style={{ color: "#0b5d4b", marginTop: "30px" }}>
+        Financial Overview
+      </h1>
 
-      <p>Enter your financial information below.</p>
+      <p>
+        Enter client financial information to calculate the current financial
+        position.
+      </p>
 
       <div
         style={{
           background: "white",
-          padding: "28px",
+          padding: "30px",
           borderRadius: "12px",
           marginTop: "30px",
         }}
       >
         <h2>Financial Data Input</h2>
 
-        <label>
-          Revenue (£)
+        <div>
+          <label>Revenue (£)</label>
           <br />
+
           <input
             type="number"
             value={revenue}
             onChange={(e) => setRevenue(e.target.value)}
             style={inputStyle}
           />
-        </label>
+        </div>
 
-        <br />
-
-        <label>
-          Expenses (£)
+        <div>
+          <label>Expenses (£)</label>
           <br />
+
           <input
             type="number"
             value={expenses}
             onChange={(e) => setExpenses(e.target.value)}
             style={inputStyle}
           />
-        </label>
+        </div>
 
-        <br />
-
-        <label>
-          Cash Balance (£)
+        <div>
+          <label>Cash Balance (£)</label>
           <br />
+
           <input
             type="number"
             value={cashBalance}
             onChange={(e) => setCashBalance(e.target.value)}
             style={inputStyle}
           />
-        </label>
+        </div>
+      </div>
 
-        <hr />
-
+      <div
+        style={{
+          background: "white",
+          padding: "30px",
+          borderRadius: "12px",
+          marginTop: "25px",
+        }}
+      >
         <h2>Financial Summary</h2>
 
-        <p>Revenue: £{Number(revenue).toFixed(2)}</p>
-        <p>Expenses: £{Number(expenses).toFixed(2)}</p>
-
         <p>
-          <strong>Net Profit: £{netProfit.toFixed(2)}</strong>
+          Revenue: <strong>£{Number(revenue).toLocaleString()}</strong>
         </p>
 
-        <p>Cash Balance: £{Number(cashBalance).toFixed(2)}</p>
+        <p>
+          Expenses: <strong>£{Number(expenses).toLocaleString()}</strong>
+        </p>
+
+        <p>
+          Net Profit: <strong>£{netProfit.toLocaleString()}</strong>
+        </p>
+
+        <p>
+          Cash Balance: <strong>£{Number(cashBalance).toLocaleString()}</strong>
+        </p>
       </div>
     </main>
   );
