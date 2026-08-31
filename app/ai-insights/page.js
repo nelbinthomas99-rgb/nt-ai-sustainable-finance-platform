@@ -1,61 +1,76 @@
 "use client";
+
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+);
 
 export default function AIInsightsPage() {
+  const router = useRouter();
+
+  const [loading, setLoading] = useState(true);
   const [revenue, setRevenue] = useState(0);
   const [expenses, setExpenses] = useState(0);
   const [esgScore, setEsgScore] = useState(0);
-  const [carbonEmissions, setCarbonEmissions] = useState(0);
-  const [climateRisk, setClimateRisk] = useState(0);
 
-  const netProfit = Number(revenue) - Number(expenses);
+  useEffect(() => {
+    let mounted = true;
 
-  let financialInsight = "Enter financial data to generate an insight.";
-  if (Number(revenue) > 0) {
-    if (netProfit > 0) {
-      financialInsight =
-        "The business is currently profitable. Review margins and cash generation for further improvement.";
-    } else if (netProfit === 0) {
-      financialInsight =
-        "The business is at break-even. Review operating costs and pricing opportunities.";
-    } else {
-      financialInsight =
-        "Expenses are higher than revenue. Cost control and revenue improvement should be prioritised.";
+    async function checkLogin() {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (error || !user) {
+        router.replace("/login");
+        return;
+      }
+
+      if (mounted) {
+        setLoading(false);
+      }
     }
-  }
 
-  let esgInsight = "Enter an ESG score to generate an insight.";
-  if (Number(esgScore) >= 75) {
-    esgInsight =
-      "ESG performance is strong. Focus on maintaining evidence, reporting quality and continuous improvement.";
-  } else if (Number(esgScore) >= 50) {
-    esgInsight =
-      "ESG performance is moderate. Identify weaker environmental, social or governance areas for improvement.";
-  } else if (Number(esgScore) > 0) {
-    esgInsight =
-      "ESG performance is currently low. A structured ESG improvement plan may be required.";
-  }
+    checkLogin();
 
-  let carbonInsight = "Enter carbon emissions to generate an insight.";
-  if (Number(carbonEmissions) > 10000) {
-    carbonInsight =
-      "Carbon emissions appear relatively high. Review energy efficiency, renewable energy and travel reduction opportunities.";
-  } else if (Number(carbonEmissions) > 0) {
-    carbonInsight =
-      "Carbon emissions are recorded. Continue monitoring trends and identify practical reduction opportunities.";
-  }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
+        router.replace("/login");
+      }
+    });
 
-  let climateInsight = "Enter a climate risk score to generate an insight.";
-  if (Number(climateRisk) >= 70) {
-    climateInsight =
-      "Climate risk is high. Physical and transition risk mitigation should be prioritised.";
-  } else if (Number(climateRisk) >= 40) {
-    climateInsight =
-      "Climate risk is moderate. Consider scenario analysis and risk-reduction measures.";
-  } else if (Number(climateRisk) > 0) {
-    climateInsight =
-      "Climate risk is currently low, but ongoing monitoring is recommended.";
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [router]);
+
+  const profit = Number(revenue) - Number(expenses);
+
+  let insight = "Enter your business data to generate an insight.";
+
+  if (Number(revenue) > 0 || Number(expenses) > 0 || Number(esgScore) > 0) {
+    if (profit < 0) {
+      insight =
+        "Your expenses are currently higher than your revenue. Review operating costs and cash flow.";
+    } else if (Number(esgScore) < 50) {
+      insight =
+        "Your financial position is positive, but your ESG score may need improvement. Consider setting measurable sustainability targets.";
+    } else if (Number(esgScore) >= 75) {
+      insight =
+        "Your current figures indicate positive profitability and strong ESG performance. Continue monitoring both financial and sustainability indicators.";
+    } else {
+      insight =
+        "Your business shows positive financial performance with moderate ESG results. Focus on improving sustainability performance while maintaining profitability.";
+    }
   }
 
   const inputStyle = {
@@ -66,14 +81,24 @@ export default function AIInsightsPage() {
     borderRadius: "8px",
     fontSize: "16px",
     marginTop: "6px",
+    marginBottom: "18px",
   };
 
-  const cardStyle = {
-    background: "white",
-    padding: "25px",
-    borderRadius: "12px",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
-  };
+  if (loading) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          fontFamily: "Arial, sans-serif",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        Checking secure login...
+      </main>
+    );
+  }
 
   return (
     <main
@@ -95,128 +120,78 @@ export default function AIInsightsPage() {
         ← Back to Dashboard
       </Link>
 
-      <h1 style={{ color: "#0b5d4b", marginTop: "30px" }}>
+      <h1
+        style={{
+          color: "#0b5d4b",
+          marginTop: "30px",
+        }}
+      >
         AI Insights
       </h1>
 
-      <p>
-        Generate financial, ESG, carbon and climate-risk insights from business data.
-      </p>
+      <p>Generate simple business insights from your financial and ESG data.</p>
 
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-          gap: "20px",
+          background: "white",
+          padding: "30px",
+          borderRadius: "12px",
           marginTop: "30px",
         }}
       >
-        <div style={cardStyle}>
-          <h2>Revenue</h2>
-          <p>Annual or reporting-period revenue (£)</p>
-          <input
-            type="number"
-            min="0"
-            value={revenue}
-            onChange={(e) => setRevenue(e.target.value)}
-            style={inputStyle}
-          />
-        </div>
+        <h2>Business Data</h2>
 
-        <div style={cardStyle}>
-          <h2>Expenses</h2>
-          <p>Annual or reporting-period expenses (£)</p>
-          <input
-            type="number"
-            min="0"
-            value={expenses}
-            onChange={(e) => setExpenses(e.target.value)}
-            style={inputStyle}
-          />
-        </div>
+        <label>Revenue (£)</label>
+        <br />
+        <input
+          type="number"
+          value={revenue}
+          onChange={(e) => setRevenue(e.target.value)}
+          style={inputStyle}
+        />
 
-        <div style={cardStyle}>
-          <h2>ESG Score</h2>
-          <p>Enter score from 0 to 100</p>
-          <input
-            type="number"
-            min="0"
-            max="100"
-            value={esgScore}
-            onChange={(e) => setEsgScore(e.target.value)}
-            style={inputStyle}
-          />
-        </div>
+        <br />
 
-        <div style={cardStyle}>
-          <h2>Carbon Emissions</h2>
-          <p>Total estimated emissions (kg CO₂e)</p>
-          <input
-            type="number"
-            min="0"
-            value={carbonEmissions}
-            onChange={(e) => setCarbonEmissions(e.target.value)}
-            style={inputStyle}
-          />
-        </div>
+        <label>Expenses (£)</label>
+        <br />
+        <input
+          type="number"
+          value={expenses}
+          onChange={(e) => setExpenses(e.target.value)}
+          style={inputStyle}
+        />
 
-        <div style={cardStyle}>
-          <h2>Climate Risk Score</h2>
-          <p>Enter score from 0 to 100</p>
-          <input
-            type="number"
-            min="0"
-            max="100"
-            value={climateRisk}
-            onChange={(e) => setClimateRisk(e.target.value)}
-            style={inputStyle}
-          />
-        </div>
-      </div>
+        <br />
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-          gap: "20px",
-          marginTop: "30px",
-        }}
-      >
-        <div style={cardStyle}>
-          <h2>Financial Health Insight</h2>
-          <p>
-            Net Profit: <strong>£{netProfit.toLocaleString()}</strong>
-          </p>
-          <p>{financialInsight}</p>
-        </div>
+        <label>ESG Score (0-100)</label>
+        <br />
+        <input
+          type="number"
+          min="0"
+          max="100"
+          value={esgScore}
+          onChange={(e) => setEsgScore(e.target.value)}
+          style={inputStyle}
+        />
 
-        <div style={cardStyle}>
-          <h2>ESG Insight</h2>
-          <p>{esgInsight}</p>
-        </div>
+        <hr style={{ margin: "10px 0 25px" }} />
 
-        <div style={cardStyle}>
-          <h2>Carbon Insight</h2>
-          <p>{carbonInsight}</p>
-        </div>
+        <h2>AI-Style Insight</h2>
 
-        <div style={cardStyle}>
-          <h2>Climate Risk Insight</h2>
-          <p>{climateInsight}</p>
-        </div>
-      </div>
+        <p
+          style={{
+            background: "#f0f7f5",
+            padding: "20px",
+            borderRadius: "8px",
+            lineHeight: "1.6",
+          }}
+        >
+          {insight}
+        </p>
 
-      <div
-        style={{
-          ...cardStyle,
-          marginTop: "25px",
-          borderLeft: "5px solid #0b5d4b",
-        }}
-      >
-        <h2>AI Decision Support</h2>
-        <p>
-          This prototype combines financial and sustainability indicators to
-          provide automated decision-support insights.
+        <p style={{ color: "#666", marginTop: "20px", fontSize: "14px" }}>
+          This is currently a rule-based prototype and does not yet use a
+          generative AI model.
         </p>
       </div>
     </main>
