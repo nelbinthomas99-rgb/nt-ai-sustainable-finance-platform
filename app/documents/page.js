@@ -1,6 +1,70 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+);
 
 export default function DocumentsPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function checkLogin() {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (error || !user) {
+        router.replace("/login");
+        return;
+      }
+
+      if (mounted) {
+        setLoading(false);
+      }
+    }
+
+    checkLogin();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
+        router.replace("/login");
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [router]);
+
+  if (loading) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          fontFamily: "Arial, sans-serif",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        Checking secure login...
+      </main>
+    );
+  }
+
   return (
     <main
       style={{
@@ -21,61 +85,99 @@ export default function DocumentsPage() {
         ← Back to Dashboard
       </Link>
 
-      <h1 style={{ color: "#0b5d4b", marginTop: "30px" }}>
-        Documents
-      </h1>
-
-      <p>
-        View and manage accounting, ESG and sustainability documents.
-      </p>
-
-      <div
+      <h1
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-          gap: "20px",
+          color: "#0b5d4b",
           marginTop: "30px",
         }}
       >
-        <DocumentCard
-          title="Accounting Documents"
-          description="Invoices, statements, accounts and supporting records."
-        />
+        Documents
+      </h1>
 
-        <DocumentCard
-          title="ESG Reports"
-          description="Environmental, social and governance reports."
-        />
+      <p>Secure area for client financial and sustainability documents.</p>
 
-        <DocumentCard
-          title="Carbon & Energy Records"
-          description="Emissions, energy and sustainability evidence."
-        />
+      <div
+        style={{
+          background: "white",
+          padding: "30px",
+          borderRadius: "12px",
+          marginTop: "30px",
+        }}
+      >
+        <h2>Document Categories</h2>
 
-        <DocumentCard
-          title="Client Reports"
-          description="Completed reports and advisory documents."
-        />
+        <div
+          style={{
+            display: "grid",
+            gap: "20px",
+            marginTop: "25px",
+          }}
+        >
+          <div
+            style={{
+              background: "#f0f7f5",
+              padding: "20px",
+              borderRadius: "8px",
+            }}
+          >
+            <h3>Financial Documents</h3>
+            <p>
+              Accounts, invoices, statements and other financial records.
+            </p>
+          </div>
+
+          <div
+            style={{
+              background: "#f0f7f5",
+              padding: "20px",
+              borderRadius: "8px",
+            }}
+          >
+            <h3>ESG Documents</h3>
+            <p>
+              Environmental, Social and Governance reports and supporting
+              records.
+            </p>
+          </div>
+
+          <div
+            style={{
+              background: "#f0f7f5",
+              padding: "20px",
+              borderRadius: "8px",
+            }}
+          >
+            <h3>Carbon & Energy Documents</h3>
+            <p>
+              Energy bills, carbon data and sustainability evidence.
+            </p>
+          </div>
+
+          <div
+            style={{
+              background: "#f0f7f5",
+              padding: "20px",
+              borderRadius: "8px",
+            }}
+          >
+            <h3>Sustainable Finance Documents</h3>
+            <p>
+              Green finance, sustainable loans and ESG-linked finance records.
+            </p>
+          </div>
+        </div>
+
+        <p
+          style={{
+            marginTop: "25px",
+            color: "#666",
+            fontSize: "14px",
+          }}
+        >
+          Secure document upload and storage will be added in the next
+          development stage.
+        </p>
       </div>
     </main>
-  );
-}
-
-function DocumentCard({ title, description }) {
-  return (
-    <div
-      style={{
-        background: "white",
-        padding: "25px",
-        borderRadius: "12px",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
-      }}
-    >
-      <h2>{title}</h2>
-      <p>{description}</p>
-      <p style={{ color: "#0b5d4b", fontWeight: "bold" }}>
-        No documents uploaded
-      </p>
-    </div>
   );
 }
