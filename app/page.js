@@ -12,25 +12,60 @@ const supabase = createClient(
 
 export default function Home() {
   const router = useRouter();
+
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
+  const [clientId, setClientId] = useState("");
+  const [clientName, setClientName] = useState("");
 
   useEffect(() => {
-    async function checkUser() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    let mounted = true;
 
-      if (!session) {
+    async function loadClient() {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
         router.replace("/login");
         return;
       }
 
-      setEmail(session.user.email || "");
+      if (!mounted) return;
+
+      setEmail(user.email || "");
+
+      const { data: profile, error: profileError } = await supabase
+        .from("client_profiles")
+        .select("client_id, client_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!mounted) return;
+
+      if (!profileError && profile) {
+        setClientId(profile.client_id || "");
+        setClientName(profile.client_name || "");
+      }
+
       setLoading(false);
     }
 
-    checkUser();
+    loadClient();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
+        router.replace("/login");
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [router]);
 
   async function handleLogout() {
@@ -42,14 +77,50 @@ export default function Home() {
     return (
       <main
         style={{
+          minHeight: "100vh",
           fontFamily: "Arial, sans-serif",
-          padding: "40px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
         }}
       >
-        Checking secure login...
+        Checking secure client access...
       </main>
     );
   }
+
+  const cards = [
+    {
+      title: "Financial Overview",
+      description: "View financial performance and accounting insights.",
+      href: "/financial",
+    },
+    {
+      title: "ESG Performance",
+      description: "Track environmental, social and governance metrics.",
+      href: "/esg",
+    },
+    {
+      title: "Carbon & Energy",
+      description: "Monitor carbon emissions and energy performance.",
+      href: "/carbon-energy",
+    },
+    {
+      title: "Sustainable Finance",
+      description: "Track sustainable investments and finance indicators.",
+      href: "/sustainable-finance",
+    },
+    {
+      title: "AI Insights",
+      description: "AI-assisted financial and sustainability insights.",
+      href: "/ai-insights",
+    },
+    {
+      title: "Documents",
+      description: "Access your client accounting and reporting documents.",
+      href: "/documents",
+    },
+  ];
 
   return (
     <main
@@ -64,13 +135,12 @@ export default function Home() {
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: "flex-start",
           gap: "20px",
-          flexWrap: "wrap",
         }}
       >
         <div>
-          <h1 style={{ color: "#0b5d4b" }}>
+          <h1 style={{ color: "#0b5d4b", marginBottom: "10px" }}>
             N&T AI-Powered Sustainable Finance & Accounting
           </h1>
 
@@ -83,17 +153,17 @@ export default function Home() {
             background: "#0b5d4b",
             color: "white",
             border: "none",
-            padding: "12px 22px",
             borderRadius: "8px",
-            cursor: "pointer",
+            padding: "12px 24px",
             fontWeight: "bold",
+            cursor: "pointer",
           }}
         >
           Logout
         </button>
       </div>
 
-      <hr />
+      <hr style={{ margin: "25px 0" }} />
 
       <h2>Welcome to Your Financial Dashboard</h2>
 
@@ -102,82 +172,62 @@ export default function Home() {
         from one secure platform.
       </p>
 
-      <p>
-        Logged in as: <strong>{email}</strong>
-      </p>
+      <div
+        style={{
+          background: "white",
+          padding: "18px",
+          borderRadius: "10px",
+          marginTop: "20px",
+          marginBottom: "30px",
+        }}
+      >
+        <p style={{ margin: "5px 0" }}>
+          Logged in as: <strong>{email}</strong>
+        </p>
+
+        <p style={{ margin: "5px 0" }}>
+          Client ID: <strong>{clientId || "Not assigned"}</strong>
+        </p>
+
+        <p style={{ margin: "5px 0" }}>
+          Client Name: <strong>{clientName || "Not assigned"}</strong>
+        </p>
+      </div>
 
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
           gap: "20px",
-          marginTop: "30px",
         }}
       >
-        <DashboardCard
-          title="Financial Overview"
-          text="View financial performance and accounting insights."
-          href="/financial"
-        />
+        {cards.map((card) => (
+          <div
+            key={card.href}
+            style={{
+              background: "white",
+              padding: "30px",
+              borderRadius: "12px",
+              boxShadow: "0 3px 12px rgba(0,0,0,0.06)",
+            }}
+          >
+            <h3 style={{ color: "#0b5d4b" }}>{card.title}</h3>
 
-        <DashboardCard
-          title="ESG Performance"
-          text="Track environmental, social and governance metrics."
-          href="/esg"
-        />
+            <p style={{ lineHeight: "1.5" }}>{card.description}</p>
 
-        <DashboardCard
-          title="Carbon & Energy"
-          text="Monitor carbon emissions and energy performance."
-          href="/carbon-energy"
-        />
-
-        <DashboardCard
-          title="Sustainable Finance"
-          text="Track sustainable investments and finance indicators."
-          href="/sustainable-finance"
-        />
-
-        <DashboardCard
-          title="AI Insights"
-          text="AI-assisted financial and sustainability insights."
-          href="/ai-insights"
-        />
-
-        <DashboardCard
-          title="Documents"
-          text="Access your client accounting and reporting documents."
-          href="/documents"
-        />
+            <Link
+              href={card.href}
+              style={{
+                color: "#0b5d4b",
+                fontWeight: "bold",
+                textDecoration: "none",
+              }}
+            >
+              Open →
+            </Link>
+          </div>
+        ))}
       </div>
     </main>
-  );
-}
-
-function DashboardCard({ title, text, href }) {
-  return (
-    <div
-      style={{
-        background: "white",
-        padding: "28px",
-        borderRadius: "12px",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-      }}
-    >
-      <h3 style={{ color: "#0b5d4b" }}>{title}</h3>
-
-      <p>{text}</p>
-
-      <Link
-        href={href}
-        style={{
-          color: "#0b5d4b",
-          fontWeight: "bold",
-          textDecoration: "none",
-        }}
-      >
-        Open →
-      </Link>
-    </div>
   );
 }
