@@ -14,30 +14,52 @@ export default function ESGPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState("");
   const [environmental, setEnvironmental] = useState(0);
   const [social, setSocial] = useState(0);
   const [governance, setGovernance] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     let mounted = true;
 
-    async function checkLogin() {
+    async function loadESGData() {
       const {
         data: { user },
-        error,
+        error: userError,
       } = await supabase.auth.getUser();
 
-      if (error || !user) {
+      if (userError || !user) {
         router.replace("/login");
         return;
       }
 
-      if (mounted) {
-        setLoading(false);
+      if (!mounted) return;
+
+      setUserId(user.id);
+
+      const { data, error } = await supabase
+        .from("esg_data")
+        .select(
+          "environmental_score, social_score, governance_score, created_at"
+        )
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (!mounted) return;
+
+      if (!error && data && data.length > 0) {
+        setEnvironmental(Number(data[0].environmental_score) || 0);
+        setSocial(Number(data[0].social_score) || 0);
+        setGovernance(Number(data[0].governance_score) || 0);
       }
+
+      setLoading(false);
     }
 
-    checkLogin();
+    loadESGData();
 
     const {
       data: { subscription },
@@ -53,13 +75,39 @@ export default function ESGPage() {
     };
   }, [router]);
 
+  async function saveESGData() {
+    if (!userId) return;
+
+    setSaving(true);
+    setMessage("");
+
+    const { error } = await supabase.from("esg_data").insert([
+      {
+        id: Date.now(),
+        user_id: userId,
+        environmental_score: Number(environmental) || 0,
+        social_score: Number(social) || 0,
+        governance_score: Number(governance) || 0,
+      },
+    ]);
+
+    if (error) {
+      console.error(error);
+      setMessage("Unable to save ESG data.");
+    } else {
+      setMessage("ESG data saved successfully.");
+    }
+
+    setSaving(false);
+  }
+
   const overallScore =
     (Number(environmental) + Number(social) + Number(governance)) / 3;
 
   const inputStyle = {
     padding: "12px",
     width: "100%",
-    maxWidth: "300px",
+    maxWidth: "320px",
     border: "1px solid #ccc",
     borderRadius: "8px",
     fontSize: "16px",
@@ -78,7 +126,7 @@ export default function ESGPage() {
           alignItems: "center",
         }}
       >
-        Checking secure login...
+        Loading secure ESG data...
       </main>
     );
   }
@@ -112,7 +160,7 @@ export default function ESGPage() {
         ESG Performance
       </h1>
 
-      <p>Enter your Environmental, Social and Governance scores.</p>
+      <p>Enter and securely save your ESG scores.</p>
 
       <div
         style={{
@@ -126,7 +174,6 @@ export default function ESGPage() {
 
         <label>Environmental Score</label>
         <br />
-
         <input
           type="number"
           min="0"
@@ -140,7 +187,6 @@ export default function ESGPage() {
 
         <label>Social Score</label>
         <br />
-
         <input
           type="number"
           min="0"
@@ -154,7 +200,6 @@ export default function ESGPage() {
 
         <label>Governance Score</label>
         <br />
-
         <input
           type="number"
           min="0"
@@ -164,7 +209,39 @@ export default function ESGPage() {
           style={inputStyle}
         />
 
-        <hr style={{ margin: "10px 0 25px" }} />
+        <button
+          onClick={saveESGData}
+          disabled={saving}
+          style={{
+            background: "#0b5d4b",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            padding: "12px 24px",
+            fontSize: "16px",
+            fontWeight: "bold",
+            cursor: saving ? "not-allowed" : "pointer",
+            marginBottom: "20px",
+          }}
+        >
+          {saving ? "Saving..." : "Save ESG Data"}
+        </button>
+
+        {message && (
+          <p
+            style={{
+              fontWeight: "bold",
+              color:
+                message === "ESG data saved successfully."
+                  ? "#0b5d4b"
+                  : "#b42318",
+            }}
+          >
+            {message}
+          </p>
+        )}
+
+        <hr style={{ margin: "20px 0 25px" }} />
 
         <h2>ESG Summary</h2>
 
