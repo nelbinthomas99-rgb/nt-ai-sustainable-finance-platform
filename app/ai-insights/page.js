@@ -14,88 +14,200 @@ export default function AIInsightsPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
-  const [revenue, setRevenue] = useState(0);
-  const [expenses, setExpenses] = useState(0);
-  const [esgScore, setEsgScore] = useState(0);
+  const [insights, setInsights] = useState([]);
+  const [summary, setSummary] = useState({
+    revenue: 0,
+    expenses: 0,
+    cashBalance: 0,
+    esgScore: 0,
+    carbon: 0,
+    sustainablePercentage: 0,
+  });
 
   useEffect(() => {
-    let mounted = true;
-
-    async function checkLogin() {
+    async function loadData() {
       const {
         data: { user },
-        error,
       } = await supabase.auth.getUser();
 
-      if (error || !user) {
-        router.replace("/login");
+      if (!user) {
+        router.push("/login");
         return;
       }
 
-      if (mounted) {
-        setLoading(false);
+      const [financial, esg, carbon, sustainable] = await Promise.all([
+        supabase
+          .from("financial_data")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+
+        supabase
+          .from("esg_data")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+
+        supabase
+          .from("carbon_energy_data")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+
+        supabase
+          .from("sustainable_finance_data")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+
+      const revenue = Number(financial.data?.revenue || 0);
+      const expenses = Number(financial.data?.expenses || 0);
+      const cashBalance = Number(financial.data?.cash_balance || 0);
+
+      const environmental = Number(
+        esg.data?.environmental_score ?? esg.data?.environmental ?? 0
+      );
+      const social = Number(esg.data?.social_score ?? esg.data?.social ?? 0);
+      const governance = Number(
+        esg.data?.governance_score ?? esg.data?.governance ?? 0
+      );
+
+      const esgScore = (environmental + social + governance) / 3;
+
+      const carbonTotal = Number(
+        carbon.data?.total_emissions ??
+          carbon.data?.total_carbon_emissions ??
+          0
+      );
+
+      const greenInvestment = Number(
+        sustainable.data?.green_investment || 0
+      );
+      const sustainableLoans = Number(
+        sustainable.data?.sustainable_loans || 0
+      );
+      const esgFunds = Number(sustainable.data?.esg_funds || 0);
+      const totalFinance = Number(sustainable.data?.total_finance || 0);
+
+      const sustainableTotal =
+        greenInvestment + sustainableLoans + esgFunds;
+
+      const sustainablePercentage =
+        totalFinance > 0
+          ? (sustainableTotal / totalFinance) * 100
+          : 0;
+
+      const generatedInsights = [];
+
+      const profit = revenue - expenses;
+
+      if (revenue > 0) {
+        if (profit > 0) {
+          generatedInsights.push(
+            `Financial performance is positive with an estimated profit of £${profit.toFixed(
+              2
+            )}.`
+          );
+        } else {
+          generatedInsights.push(
+            "Expenses are currently equal to or higher than revenue. Review operating costs and cash-flow planning."
+          );
+        }
       }
+
+      if (cashBalance > 0 && revenue > 0) {
+        if (cashBalance < revenue * 0.2) {
+          generatedInsights.push(
+            "Cash reserves appear relatively low compared with revenue. Consider strengthening liquidity."
+          );
+        } else {
+          generatedInsights.push(
+            "The current cash position appears reasonably healthy compared with revenue."
+          );
+        }
+      }
+
+      if (esgScore > 0) {
+        if (esgScore >= 80) {
+          generatedInsights.push(
+            `ESG performance is strong with an overall score of ${esgScore.toFixed(
+              1
+            )}/100.`
+          );
+        } else if (esgScore >= 60) {
+          generatedInsights.push(
+            `ESG performance is moderate at ${esgScore.toFixed(
+              1
+            )}/100. There is scope for further improvement.`
+          );
+        } else {
+          generatedInsights.push(
+            `ESG performance requires attention. The current overall score is ${esgScore.toFixed(
+              1
+            )}/100.`
+          );
+        }
+      }
+
+      if (carbonTotal > 0) {
+        generatedInsights.push(
+          `Recorded carbon emissions are approximately ${carbonTotal.toFixed(
+            2
+          )} kg CO₂e. Continue monitoring energy and travel activity to identify reduction opportunities.`
+        );
+      }
+
+      if (totalFinance > 0) {
+        if (sustainablePercentage >= 50) {
+          generatedInsights.push(
+            `Sustainable finance represents ${sustainablePercentage.toFixed(
+              1
+            )}% of total finance, indicating a strong sustainability allocation.`
+          );
+        } else {
+          generatedInsights.push(
+            `Sustainable finance represents ${sustainablePercentage.toFixed(
+              1
+            )}% of total finance. Increasing sustainable allocation could strengthen the sustainability profile.`
+          );
+        }
+      }
+
+      if (generatedInsights.length === 0) {
+        generatedInsights.push(
+          "Add data to the Financial, ESG, Carbon & Energy and Sustainable Finance modules to generate insights."
+        );
+      }
+
+      setSummary({
+        revenue,
+        expenses,
+        cashBalance,
+        esgScore,
+        carbon: carbonTotal,
+        sustainablePercentage,
+      });
+
+      setInsights(generatedInsights);
+      setLoading(false);
     }
 
-    checkLogin();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        router.replace("/login");
-      }
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    loadData();
   }, [router]);
-
-  const profit = Number(revenue) - Number(expenses);
-
-  let insight = "Enter your business data to generate an insight.";
-
-  if (Number(revenue) > 0 || Number(expenses) > 0 || Number(esgScore) > 0) {
-    if (profit < 0) {
-      insight =
-        "Your expenses are currently higher than your revenue. Review operating costs and cash flow.";
-    } else if (Number(esgScore) < 50) {
-      insight =
-        "Your financial position is positive, but your ESG score may need improvement. Consider setting measurable sustainability targets.";
-    } else if (Number(esgScore) >= 75) {
-      insight =
-        "Your current figures indicate positive profitability and strong ESG performance. Continue monitoring both financial and sustainability indicators.";
-    } else {
-      insight =
-        "Your business shows positive financial performance with moderate ESG results. Focus on improving sustainability performance while maintaining profitability.";
-    }
-  }
-
-  const inputStyle = {
-    padding: "12px",
-    width: "100%",
-    maxWidth: "300px",
-    border: "1px solid #ccc",
-    borderRadius: "8px",
-    fontSize: "16px",
-    marginTop: "6px",
-    marginBottom: "18px",
-  };
 
   if (loading) {
     return (
-      <main
-        style={{
-          minHeight: "100vh",
-          fontFamily: "Arial, sans-serif",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        Checking secure login...
+      <main style={{ padding: "40px" }}>
+        <h2>Loading AI Insights...</h2>
       </main>
     );
   }
@@ -103,35 +215,32 @@ export default function AIInsightsPage() {
   return (
     <main
       style={{
-        fontFamily: "Arial, sans-serif",
+        padding: "40px",
         background: "#f4f7f6",
         minHeight: "100vh",
-        padding: "40px",
+        fontFamily: "Arial, sans-serif",
       }}
     >
       <Link
         href="/"
         style={{
-          color: "#0b5d4b",
-          textDecoration: "none",
+          color: "#006b57",
           fontWeight: "bold",
+          textDecoration: "none",
         }}
       >
         ← Back to Dashboard
       </Link>
 
-      <h1
-        style={{
-          color: "#0b5d4b",
-          marginTop: "30px",
-        }}
-      >
+      <h1 style={{ color: "#006b57", marginTop: "30px" }}>
         AI Insights
       </h1>
 
-      <p>Generate simple business insights from your financial and ESG data.</p>
+      <p>
+        Automated insights based on your financial and sustainability data.
+      </p>
 
-      <div
+      <section
         style={{
           background: "white",
           padding: "30px",
@@ -139,61 +248,74 @@ export default function AIInsightsPage() {
           marginTop: "30px",
         }}
       >
-        <h2>Business Data</h2>
+        <h2>Business Data Overview</h2>
 
-        <label>Revenue (£)</label>
-        <br />
-        <input
-          type="number"
-          value={revenue}
-          onChange={(e) => setRevenue(e.target.value)}
-          style={inputStyle}
-        />
+        <p>
+          Revenue: <strong>£{summary.revenue.toFixed(2)}</strong>
+        </p>
 
-        <br />
+        <p>
+          Expenses: <strong>£{summary.expenses.toFixed(2)}</strong>
+        </p>
 
-        <label>Expenses (£)</label>
-        <br />
-        <input
-          type="number"
-          value={expenses}
-          onChange={(e) => setExpenses(e.target.value)}
-          style={inputStyle}
-        />
+        <p>
+          Cash Balance: <strong>£{summary.cashBalance.toFixed(2)}</strong>
+        </p>
 
-        <br />
+        <p>
+          ESG Score: <strong>{summary.esgScore.toFixed(1)}/100</strong>
+        </p>
 
-        <label>ESG Score (0-100)</label>
-        <br />
-        <input
-          type="number"
-          min="0"
-          max="100"
-          value={esgScore}
-          onChange={(e) => setEsgScore(e.target.value)}
-          style={inputStyle}
-        />
+        <p>
+          Carbon Emissions:{" "}
+          <strong>{summary.carbon.toFixed(2)} kg CO₂e</strong>
+        </p>
 
-        <hr style={{ margin: "10px 0 25px" }} />
+        <p>
+          Sustainable Finance:{" "}
+          <strong>
+            {summary.sustainablePercentage.toFixed(1)}%
+          </strong>
+        </p>
+      </section>
 
-        <h2>AI-Style Insight</h2>
+      <section
+        style={{
+          background: "white",
+          padding: "30px",
+          borderRadius: "12px",
+          marginTop: "25px",
+        }}
+      >
+        <h2>AI-Powered Insights</h2>
+
+        {insights.map((insight, index) => (
+          <div
+            key={index}
+            style={{
+              padding: "18px",
+              marginTop: "15px",
+              background: "#eef8f5",
+              borderLeft: "5px solid #006b57",
+              borderRadius: "6px",
+            }}
+          >
+            {insight}
+          </div>
+        ))}
 
         <p
           style={{
-            background: "#f0f7f5",
-            padding: "20px",
-            borderRadius: "8px",
-            lineHeight: "1.6",
+            marginTop: "25px",
+            fontSize: "13px",
+            color: "#666",
           }}
         >
-          {insight}
+          Prototype decision-support insights generated from client portal
+          data. These insights should not be treated as professional financial
+          or investment advice.
         </p>
-
-        <p style={{ color: "#666", marginTop: "20px", fontSize: "14px" }}>
-          This is currently a rule-based prototype and does not yet use a
-          generative AI model.
-        </p>
-      </div>
+      </section>
     </main>
   );
 }
