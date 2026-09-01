@@ -14,31 +14,56 @@ export default function SustainableFinancePage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState("");
+
   const [greenInvestment, setGreenInvestment] = useState(0);
   const [sustainableLoans, setSustainableLoans] = useState(0);
-  const [esgLinkedFinance, setEsgLinkedFinance] = useState(0);
+  const [esgFunds, setEsgFunds] = useState(0);
   const [totalFinance, setTotalFinance] = useState(0);
+
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     let mounted = true;
 
-    async function checkLogin() {
+    async function loadData() {
       const {
         data: { user },
-        error,
+        error: userError,
       } = await supabase.auth.getUser();
 
-      if (error || !user) {
+      if (userError || !user) {
         router.replace("/login");
         return;
       }
 
-      if (mounted) {
-        setLoading(false);
+      if (!mounted) return;
+
+      setUserId(user.id);
+
+      const { data, error } = await supabase
+        .from("sustainable_finance_data")
+        .select(
+          "green_investment, sustainable_loans, esg_funds, total_finance, created_at"
+        )
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (!mounted) return;
+
+      if (!error && data && data.length > 0) {
+        setGreenInvestment(Number(data[0].green_investment) || 0);
+        setSustainableLoans(Number(data[0].sustainable_loans) || 0);
+        setEsgFunds(Number(data[0].esg_funds) || 0);
+        setTotalFinance(Number(data[0].total_finance) || 0);
       }
+
+      setLoading(false);
     }
 
-    checkLogin();
+    loadData();
 
     const {
       data: { subscription },
@@ -54,20 +79,49 @@ export default function SustainableFinancePage() {
     };
   }, [router]);
 
-  const sustainableTotal =
+  const sustainableAmount =
     Number(greenInvestment) +
     Number(sustainableLoans) +
-    Number(esgLinkedFinance);
+    Number(esgFunds);
 
-  const sustainableShare =
+  const sustainablePercentage =
     Number(totalFinance) > 0
-      ? (sustainableTotal / Number(totalFinance)) * 100
+      ? (sustainableAmount / Number(totalFinance)) * 100
       : 0;
+
+  async function saveData() {
+    if (!userId) return;
+
+    setSaving(true);
+    setMessage("");
+
+    const { error } = await supabase
+      .from("sustainable_finance_data")
+      .insert([
+        {
+          id: Date.now(),
+          user_id: userId,
+          green_investment: Number(greenInvestment) || 0,
+          sustainable_loans: Number(sustainableLoans) || 0,
+          esg_funds: Number(esgFunds) || 0,
+          total_finance: Number(totalFinance) || 0,
+        },
+      ]);
+
+    if (error) {
+      console.error(error);
+      setMessage("Unable to save Sustainable Finance data.");
+    } else {
+      setMessage("Sustainable Finance data saved successfully.");
+    }
+
+    setSaving(false);
+  }
 
   const inputStyle = {
     padding: "12px",
     width: "100%",
-    maxWidth: "300px",
+    maxWidth: "320px",
     border: "1px solid #ccc",
     borderRadius: "8px",
     fontSize: "16px",
@@ -86,7 +140,7 @@ export default function SustainableFinancePage() {
           alignItems: "center",
         }}
       >
-        Checking secure login...
+        Loading secure Sustainable Finance data...
       </main>
     );
   }
@@ -120,7 +174,9 @@ export default function SustainableFinancePage() {
         Sustainable Finance
       </h1>
 
-      <p>Track sustainable and ESG-linked finance activity.</p>
+      <p>
+        Track sustainable investments, loans and ESG-focused finance.
+      </p>
 
       <div
         style={{
@@ -130,12 +186,13 @@ export default function SustainableFinancePage() {
           marginTop: "30px",
         }}
       >
-        <h2>Finance Data Input</h2>
+        <h2>Sustainable Finance Input</h2>
 
         <label>Green Investment (£)</label>
         <br />
         <input
           type="number"
+          min="0"
           value={greenInvestment}
           onChange={(e) => setGreenInvestment(e.target.value)}
           style={inputStyle}
@@ -147,6 +204,7 @@ export default function SustainableFinancePage() {
         <br />
         <input
           type="number"
+          min="0"
           value={sustainableLoans}
           onChange={(e) => setSustainableLoans(e.target.value)}
           style={inputStyle}
@@ -154,12 +212,13 @@ export default function SustainableFinancePage() {
 
         <br />
 
-        <label>ESG-Linked Finance (£)</label>
+        <label>ESG Funds (£)</label>
         <br />
         <input
           type="number"
-          value={esgLinkedFinance}
-          onChange={(e) => setEsgLinkedFinance(e.target.value)}
+          min="0"
+          value={esgFunds}
+          onChange={(e) => setEsgFunds(e.target.value)}
           style={inputStyle}
         />
 
@@ -169,12 +228,46 @@ export default function SustainableFinancePage() {
         <br />
         <input
           type="number"
+          min="0"
           value={totalFinance}
           onChange={(e) => setTotalFinance(e.target.value)}
           style={inputStyle}
         />
 
-        <hr style={{ margin: "10px 0 25px" }} />
+        <br />
+
+        <button
+          onClick={saveData}
+          disabled={saving}
+          style={{
+            background: "#0b5d4b",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            padding: "12px 24px",
+            fontSize: "16px",
+            fontWeight: "bold",
+            cursor: saving ? "not-allowed" : "pointer",
+          }}
+        >
+          {saving ? "Saving..." : "Save Sustainable Finance Data"}
+        </button>
+
+        {message && (
+          <p
+            style={{
+              fontWeight: "bold",
+              marginTop: "20px",
+              color: message.includes("successfully")
+                ? "#0b5d4b"
+                : "#b42318",
+            }}
+          >
+            {message}
+          </p>
+        )}
+
+        <hr style={{ margin: "25px 0" }} />
 
         <h2>Sustainable Finance Summary</h2>
 
@@ -189,18 +282,17 @@ export default function SustainableFinancePage() {
         </p>
 
         <p>
-          ESG-Linked Finance:{" "}
-          <strong>£{Number(esgLinkedFinance).toFixed(2)}</strong>
+          ESG Funds: <strong>£{Number(esgFunds).toFixed(2)}</strong>
         </p>
 
         <p>
-          Total Sustainable Finance:{" "}
-          <strong>£{sustainableTotal.toFixed(2)}</strong>
+          Sustainable Finance Total:{" "}
+          <strong>£{sustainableAmount.toFixed(2)}</strong>
         </p>
 
         <p>
-          Sustainable Finance Share:{" "}
-          <strong>{sustainableShare.toFixed(1)}%</strong>
+          Sustainable Finance Percentage:{" "}
+          <strong>{sustainablePercentage.toFixed(1)}%</strong>
         </p>
       </div>
     </main>
