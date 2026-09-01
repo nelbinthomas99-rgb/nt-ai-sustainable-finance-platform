@@ -14,30 +14,50 @@ export default function FinancialPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState("");
   const [revenue, setRevenue] = useState(0);
   const [expenses, setExpenses] = useState(0);
   const [cashBalance, setCashBalance] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     let mounted = true;
 
-    async function checkLogin() {
+    async function loadFinancialData() {
       const {
         data: { user },
-        error,
+        error: userError,
       } = await supabase.auth.getUser();
 
-      if (error || !user) {
+      if (userError || !user) {
         router.replace("/login");
         return;
       }
 
-      if (mounted) {
-        setLoading(false);
+      if (!mounted) return;
+
+      setUserId(user.id);
+
+      const { data, error } = await supabase
+        .from("financial_data")
+        .select("revenue, expenses, cash_balance, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (!mounted) return;
+
+      if (!error && data && data.length > 0) {
+        setRevenue(Number(data[0].revenue) || 0);
+        setExpenses(Number(data[0].expenses) || 0);
+        setCashBalance(Number(data[0].cash_balance) || 0);
       }
+
+      setLoading(false);
     }
 
-    checkLogin();
+    loadFinancialData();
 
     const {
       data: { subscription },
@@ -53,12 +73,38 @@ export default function FinancialPage() {
     };
   }, [router]);
 
+  async function saveFinancialData() {
+    if (!userId) return;
+
+    setSaving(true);
+    setMessage("");
+
+    const { error } = await supabase.from("financial_data").insert([
+      {
+        id: Date.now(),
+        user_id: userId,
+        revenue: Number(revenue) || 0,
+        expenses: Number(expenses) || 0,
+        cash_balance: Number(cashBalance) || 0,
+      },
+    ]);
+
+    if (error) {
+      console.error(error);
+      setMessage("Unable to save financial data.");
+    } else {
+      setMessage("Financial data saved successfully.");
+    }
+
+    setSaving(false);
+  }
+
   const netProfit = Number(revenue) - Number(expenses);
 
   const inputStyle = {
     padding: "12px",
     width: "100%",
-    maxWidth: "300px",
+    maxWidth: "320px",
     border: "1px solid #ccc",
     borderRadius: "8px",
     fontSize: "16px",
@@ -77,7 +123,7 @@ export default function FinancialPage() {
           alignItems: "center",
         }}
       >
-        Checking secure login...
+        Loading secure financial data...
       </main>
     );
   }
@@ -111,7 +157,9 @@ export default function FinancialPage() {
         Financial Overview
       </h1>
 
-      <p>Enter your financial information below.</p>
+      <p>
+        Enter and securely save your financial information.
+      </p>
 
       <div
         style={{
@@ -128,6 +176,8 @@ export default function FinancialPage() {
 
         <input
           type="number"
+          min="0"
+          step="0.01"
           value={revenue}
           onChange={(e) => setRevenue(e.target.value)}
           style={inputStyle}
@@ -140,6 +190,8 @@ export default function FinancialPage() {
 
         <input
           type="number"
+          min="0"
+          step="0.01"
           value={expenses}
           onChange={(e) => setExpenses(e.target.value)}
           style={inputStyle}
@@ -152,12 +204,45 @@ export default function FinancialPage() {
 
         <input
           type="number"
+          step="0.01"
           value={cashBalance}
           onChange={(e) => setCashBalance(e.target.value)}
           style={inputStyle}
         />
 
-        <hr style={{ margin: "10px 0 25px" }} />
+        <button
+          onClick={saveFinancialData}
+          disabled={saving}
+          style={{
+            background: "#0b5d4b",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            padding: "12px 24px",
+            fontSize: "16px",
+            fontWeight: "bold",
+            cursor: saving ? "not-allowed" : "pointer",
+            marginBottom: "20px",
+          }}
+        >
+          {saving ? "Saving..." : "Save Financial Data"}
+        </button>
+
+        {message && (
+          <p
+            style={{
+              fontWeight: "bold",
+              color:
+                message === "Financial data saved successfully."
+                  ? "#0b5d4b"
+                  : "#b42318",
+            }}
+          >
+            {message}
+          </p>
+        )}
+
+        <hr style={{ margin: "20px 0 25px" }} />
 
         <h2>Financial Summary</h2>
 
@@ -174,7 +259,8 @@ export default function FinancialPage() {
         </p>
 
         <p>
-          Cash Balance: <strong>£{Number(cashBalance).toFixed(2)}</strong>
+          Cash Balance:{" "}
+          <strong>£{Number(cashBalance).toFixed(2)}</strong>
         </p>
       </div>
     </main>
