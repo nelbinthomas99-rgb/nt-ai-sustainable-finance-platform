@@ -9,7 +9,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 );
-f
+
 export default function AIInsightsPage() {
   const router = useRouter();
 
@@ -76,27 +76,39 @@ export default function AIInsightsPage() {
       const environmental = Number(
         esg.data?.environmental_score ?? esg.data?.environmental ?? 0
       );
-      const social = Number(esg.data?.social_score ?? esg.data?.social ?? 0);
+
+      const social = Number(
+        esg.data?.social_score ?? esg.data?.social ?? 0
+      );
+
       const governance = Number(
         esg.data?.governance_score ?? esg.data?.governance ?? 0
       );
 
-      const esgScore = (environmental + social + governance) / 3;
+      const esgScore =
+        environmental > 0 || social > 0 || governance > 0
+          ? (environmental + social + governance) / 3
+          : 0;
 
       const carbonTotal = Number(
-        carbon.data?.carbon_emissions_kg ??
-          carbon.data?.total_carbon_emissions ??
-          0
+        carbon.data?.carbon_emissions_kg ?? 0
       );
 
       const greenInvestment = Number(
         sustainable.data?.green_investment || 0
       );
+
       const sustainableLoans = Number(
         sustainable.data?.sustainable_loans || 0
       );
-      const esgFunds = Number(sustainable.data?.esg_funds || 0);
-      const totalFinance = Number(sustainable.data?.total_finance || 0);
+
+      const esgFunds = Number(
+        sustainable.data?.esg_funds || 0
+      );
+
+      const totalFinance = Number(
+        sustainable.data?.total_finance || 0
+      );
 
       const sustainableTotal =
         greenInvestment + sustainableLoans + esgFunds;
@@ -106,9 +118,9 @@ export default function AIInsightsPage() {
           ? (sustainableTotal / totalFinance) * 100
           : 0;
 
-      const generatedInsights = [];
-
       const profit = revenue - expenses;
+
+      const generatedInsights = [];
 
       if (revenue > 0) {
         if (profit > 0) {
@@ -117,9 +129,15 @@ export default function AIInsightsPage() {
               2
             )}.`
           );
+        } else if (profit < 0) {
+          generatedInsights.push(
+            `Expenses currently exceed revenue by £${Math.abs(
+              profit
+            ).toFixed(2)}. Review costs and cash-flow planning.`
+          );
         } else {
           generatedInsights.push(
-            "Expenses are currently equal to or higher than revenue. Review operating costs and cash-flow planning."
+            "Revenue and expenses are currently equal."
           );
         }
       }
@@ -127,11 +145,11 @@ export default function AIInsightsPage() {
       if (cashBalance > 0 && revenue > 0) {
         if (cashBalance < revenue * 0.2) {
           generatedInsights.push(
-            "Cash reserves appear relatively low compared with revenue. Consider strengthening liquidity."
+            "Cash reserves appear relatively low compared with recorded revenue. Consider reviewing liquidity requirements."
           );
         } else {
           generatedInsights.push(
-            "The current cash position appears reasonably healthy compared with revenue."
+            "The current cash position appears reasonably healthy compared with recorded revenue."
           );
         }
       }
@@ -162,7 +180,7 @@ export default function AIInsightsPage() {
         generatedInsights.push(
           `Recorded carbon emissions are approximately ${carbonTotal.toFixed(
             2
-          )} kg CO₂e. Continue monitoring energy and travel activity to identify reduction opportunities.`
+          )} kg CO₂e. Review energy use and business travel for potential reduction opportunities.`
         );
       }
 
@@ -177,14 +195,14 @@ export default function AIInsightsPage() {
           generatedInsights.push(
             `Sustainable finance represents ${sustainablePercentage.toFixed(
               1
-            )}% of total finance. Increasing sustainable allocation could strengthen the sustainability profile.`
+            )}% of total finance. Increasing sustainability-linked allocation may strengthen the sustainability profile.`
           );
         }
       }
 
       if (generatedInsights.length === 0) {
         generatedInsights.push(
-          "Add data to the Financial, ESG, Carbon & Energy and Sustainable Finance modules to generate insights."
+          "Add data to the Financial, ESG, Carbon & Energy and Sustainable Finance modules to generate automated insights."
         );
       }
 
@@ -206,7 +224,12 @@ export default function AIInsightsPage() {
 
   if (loading) {
     return (
-      <main style={{ padding: "40px" }}>
+      <main
+        style={{
+          padding: "40px",
+          fontFamily: "Arial, sans-serif",
+        }}
+      >
         <h2>Loading AI Insights...</h2>
       </main>
     );
@@ -232,12 +255,18 @@ export default function AIInsightsPage() {
         ← Back to Dashboard
       </Link>
 
-      <h1 style={{ color: "#006b57", marginTop: "30px" }}>
+      <h1
+        style={{
+          color: "#006b57",
+          marginTop: "30px",
+        }}
+      >
         AI Insights
       </h1>
 
       <p>
-        Automated insights based on your financial and sustainability data.
+        Automated insights based on your latest financial and sustainability
+        data.
       </p>
 
       <section
@@ -273,9 +302,7 @@ export default function AIInsightsPage() {
 
         <p>
           Sustainable Finance:{" "}
-          <strong>
-            {summary.sustainablePercentage.toFixed(1)}%
-          </strong>
+          <strong>{summary.sustainablePercentage.toFixed(1)}%</strong>
         </p>
       </section>
 
@@ -311,9 +338,9 @@ export default function AIInsightsPage() {
             color: "#666",
           }}
         >
-          Prototype decision-support insights generated from client portal
-          data. These insights should not be treated as professional financial
-          or investment advice.
+          Prototype automated decision-support insights based on the latest
+          saved client data. These insights are not professional financial,
+          investment or sustainability advice.
         </p>
       </section>
     </main>
