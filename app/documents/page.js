@@ -12,12 +12,37 @@ const supabase = createClient(
 
 export default function DocumentsPage() {
   const router = useRouter();
+
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState("");
+  const [file, setFile] = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function loadDocuments(currentUserId) {
+    const { data, error } = await supabase.storage
+      .from("client-documents")
+      .list(currentUserId, {
+        limit: 100,
+        sortBy: {
+          column: "created_at",
+          order: "desc",
+        },
+      });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setDocuments(data || []);
+  }
 
   useEffect(() => {
     let mounted = true;
 
-    async function checkLogin() {
+    async function loadPage() {
       const {
         data: { user },
         error,
@@ -28,12 +53,18 @@ export default function DocumentsPage() {
         return;
       }
 
+      if (!mounted) return;
+
+      setUserId(user.id);
+
+      await loadDocuments(user.id);
+
       if (mounted) {
         setLoading(false);
       }
     }
 
-    checkLogin();
+    loadPage();
 
     const {
       data: { subscription },
@@ -49,18 +80,71 @@ export default function DocumentsPage() {
     };
   }, [router]);
 
+  async function uploadDocument() {
+    if (!file || !userId) {
+      setMessage("Please choose a file first.");
+      return;
+    }
+
+    setUploading(true);
+    setMessage("");
+
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const filePath = `${userId}/${Date.now()}-${safeName}`;
+
+    const { error } = await supabase.storage
+      .from("client-documents")
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (error) {
+      console.error(error);
+      setMessage("Unable to upload document.");
+    } else {
+      setMessage("Document uploaded successfully.");
+      setFile(null);
+
+      const input = document.getElementById("document-upload");
+      if (input) {
+        input.value = "";
+      }
+
+      await loadDocuments(userId);
+    }
+
+    setUploading(false);
+  }
+
+  async function openDocument(fileName) {
+    const filePath = `${userId}/${fileName}`;
+
+    const { data, error } = await supabase.storage
+      .from("client-documents")
+      .createSignedUrl(filePath, 60);
+
+    if (error || !data?.signedUrl) {
+      console.error(error);
+      setMessage("Unable to open document.");
+      return;
+    }
+
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  }
+
   if (loading) {
     return (
       <main
         style={{
           minHeight: "100vh",
-          fontFamily: "Arial, sans-serif",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
+          fontFamily: "Arial, sans-serif",
         }}
       >
-        Checking secure login...
+        Loading secure documents...
       </main>
     );
   }
@@ -68,10 +152,10 @@ export default function DocumentsPage() {
   return (
     <main
       style={{
-        fontFamily: "Arial, sans-serif",
-        background: "#f4f7f6",
         minHeight: "100vh",
+        background: "#f4f7f6",
         padding: "40px",
+        fontFamily: "Arial, sans-serif",
       }}
     >
       <Link
@@ -94,7 +178,9 @@ export default function DocumentsPage() {
         Documents
       </h1>
 
-      <p>Secure area for client financial and sustainability documents.</p>
+      <p>
+        Securely upload and access documents linked to your client account.
+      </p>
 
       <div
         style={{
@@ -104,79 +190,98 @@ export default function DocumentsPage() {
           marginTop: "30px",
         }}
       >
-        <h2>Document Categories</h2>
+        <h2>Upload Document</h2>
 
-        <div
+        <input
+          id="document-upload"
+          type="file"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
           style={{
-            display: "grid",
-            gap: "20px",
-            marginTop: "25px",
+            marginTop: "10px",
+            marginBottom: "20px",
+          }}
+        />
+
+        <br />
+
+        <button
+          onClick={uploadDocument}
+          disabled={uploading}
+          style={{
+            background: "#0b5d4b",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            padding: "12px 24px",
+            fontSize: "16px",
+            fontWeight: "bold",
+            cursor: uploading ? "not-allowed" : "pointer",
           }}
         >
-          <div
+          {uploading ? "Uploading..." : "Upload Document"}
+        </button>
+
+        {message && (
+          <p
             style={{
-              background: "#f0f7f5",
-              padding: "20px",
-              borderRadius: "8px",
+              marginTop: "20px",
+              fontWeight: "bold",
+              color: message.includes("successfully")
+                ? "#0b5d4b"
+                : "#b42318",
             }}
           >
-            <h3>Financial Documents</h3>
-            <p>
-              Accounts, invoices, statements and other financial records.
-            </p>
-          </div>
+            {message}
+          </p>
+        )}
 
-          <div
-            style={{
-              background: "#f0f7f5",
-              padding: "20px",
-              borderRadius: "8px",
-            }}
-          >
-            <h3>ESG Documents</h3>
-            <p>
-              Environmental, Social and Governance reports and supporting
-              records.
-            </p>
-          </div>
+        <hr style={{ margin: "30px 0" }} />
 
-          <div
-            style={{
-              background: "#f0f7f5",
-              padding: "20px",
-              borderRadius: "8px",
-            }}
-          >
-            <h3>Carbon & Energy Documents</h3>
-            <p>
-              Energy bills, carbon data and sustainability evidence.
-            </p>
-          </div>
+        <h2>Your Documents</h2>
 
-          <div
-            style={{
-              background: "#f0f7f5",
-              padding: "20px",
-              borderRadius: "8px",
-            }}
-          >
-            <h3>Sustainable Finance Documents</h3>
-            <p>
-              Green finance, sustainable loans and ESG-linked finance records.
-            </p>
-          </div>
-        </div>
+        {documents.length === 0 ? (
+          <p>No documents uploaded yet.</p>
+        ) : (
+          <div>
+            {documents.map((document) => (
+              <div
+                key={document.id || document.name}
+                style={{
+                  border: "1px solid #ddd",
+                  borderRadius: "8px",
+                  padding: "15px",
+                  marginBottom: "12px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: "15px",
+                }}
+              >
+                <span
+                  style={{
+                    overflowWrap: "anywhere",
+                  }}
+                >
+                  {document.name}
+                </span>
 
-        <p
-          style={{
-            marginTop: "25px",
-            color: "#666",
-            fontSize: "14px",
-          }}
-        >
-          Secure document upload and storage will be added in the next
-          development stage.
-        </p>
+                <button
+                  onClick={() => openDocument(document.name)}
+                  style={{
+                    background: "#0b5d4b",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "8px 14px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Open
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </main>
   );
