@@ -9,7 +9,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 );
-
+f
 export default function AIInsightsPage() {
   const router = useRouter();
 
@@ -84,7 +84,7 @@ export default function AIInsightsPage() {
       const esgScore = (environmental + social + governance) / 3;
 
       const carbonTotal = Number(
-        carbon.data?.total_emissions ??
+        carbon.data?.carbon_emissions_kg ??
           carbon.data?.total_carbon_emissions ??
           0
       );
