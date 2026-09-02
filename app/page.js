@@ -1,617 +1,331 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-);
+export default function ArchitecturePage() {
+  const box = {
+    background: "white",
+    borderRadius: "14px",
+    padding: "20px",
+    boxShadow: "0 3px 12px rgba(0,0,0,0.06)",
+    border: "1px solid #dfe7e4",
+  };
 
-function BarChart({ title, items, suffix = "" }) {
-  const maxValue = Math.max(...items.map((item) => item.value), 1);
-
-  return (
-    <div
-      style={{
-        background: "white",
-        padding: "24px",
-        borderRadius: "14px",
-        boxShadow: "0 3px 12px rgba(0,0,0,0.06)",
-      }}
-    >
-      <h3 style={{ color: "#0b5d4b", marginTop: 0 }}>{title}</h3>
-
-      {items.map((item) => {
-        const width = (item.value / maxValue) * 100;
-
-        return (
-          <div key={item.label} style={{ marginBottom: "18px" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "7px",
-                gap: "15px",
-              }}
-            >
-              <span style={{ fontWeight: "600" }}>{item.label}</span>
-
-              <span>
-                {item.prefix || ""}
-                {Number(item.value).toLocaleString("en-GB", {
-                  maximumFractionDigits: 2,
-                })}
-                {suffix}
-              </span>
-            </div>
-
-            <div
-              style={{
-                width: "100%",
-                height: "14px",
-                background: "#e6ecea",
-                borderRadius: "20px",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  width: `${width}%`,
-                  height: "100%",
-                  background: "#0b5d4b",
-                  borderRadius: "20px",
-                }}
-              />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-export default function Home() {
-  const router = useRouter();
-
-  const [loading, setLoading] = useState(true);
-  const [email, setEmail] = useState("");
-  const [clientId, setClientId] = useState("");
-  const [clientName, setClientName] = useState("");
-
-  const [summary, setSummary] = useState({
-    revenue: 0,
-    expenses: 0,
-    profit: 0,
-    environmental: 0,
-    social: 0,
-    governance: 0,
-    esgScore: 0,
-    electricity: 0,
-    gas: 0,
-    travel: 0,
-    carbon: 0,
-    greenInvestment: 0,
-    sustainableLoans: 0,
-    esgFunds: 0,
-    totalFinance: 0,
-    sustainablePercentage: 0,
-  });
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadClient() {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        router.replace("/login");
-        return;
-      }
-
-      if (!mounted) return;
-
-      setEmail(user.email || "");
-
-      const { data: profile } = await supabase
-        .from("client_profiles")
-        .select("client_id, client_name")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!mounted) return;
-
-      if (profile) {
-        setClientId(profile.client_id || "");
-        setClientName(profile.client_name || "");
-      }
-
-      const [financial, esg, carbon, sustainable] = await Promise.all([
-        supabase
-          .from("financial_data")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-
-        supabase
-          .from("esg_data")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-
-        supabase
-          .from("carbon_energy_data")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-
-        supabase
-          .from("sustainable_finance_data")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-      ]);
-
-      const revenue = Number(financial.data?.revenue || 0);
-      const expenses = Number(financial.data?.expenses || 0);
-      const profit = revenue - expenses;
-
-      const environmental = Number(
-        esg.data?.environmental_score ?? esg.data?.environmental ?? 0
-      );
-
-      const social = Number(
-        esg.data?.social_score ?? esg.data?.social ?? 0
-      );
-
-      const governance = Number(
-        esg.data?.governance_score ?? esg.data?.governance ?? 0
-      );
-
-      const esgScore =
-        environmental > 0 || social > 0 || governance > 0
-          ? (environmental + social + governance) / 3
-          : 0;
-
-      const electricity = Number(carbon.data?.electricity_kwh || 0);
-      const gas = Number(carbon.data?.gas_kwh || 0);
-      const travel = Number(carbon.data?.travel_km || 0);
-
-      const carbonTotal = Number(
-        carbon.data?.carbon_emissions_kg || 0
-      );
-
-      const greenInvestment = Number(
-        sustainable.data?.green_investment || 0
-      );
-
-      const sustainableLoans = Number(
-        sustainable.data?.sustainable_loans || 0
-      );
-
-      const esgFunds = Number(
-        sustainable.data?.esg_funds || 0
-      );
-
-      const totalFinance = Number(
-        sustainable.data?.total_finance || 0
-      );
-
-      const sustainableTotal =
-        greenInvestment + sustainableLoans + esgFunds;
-
-      const sustainablePercentage =
-        totalFinance > 0
-          ? (sustainableTotal / totalFinance) * 100
-          : 0;
-
-      if (!mounted) return;
-
-      setSummary({
-        revenue,
-        expenses,
-        profit,
-        environmental,
-        social,
-        governance,
-        esgScore,
-        electricity,
-        gas,
-        travel,
-        carbon: carbonTotal,
-        greenInvestment,
-        sustainableLoans,
-        esgFunds,
-        totalFinance,
-        sustainablePercentage,
-      });
-
-      setLoading(false);
-    }
-
-    loadClient();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        router.replace("/login");
-      }
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [router]);
-
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    router.replace("/login");
-  }
-
-  if (loading) {
-    return (
-      <main
-        style={{
-          minHeight: "100vh",
-          fontFamily: "Arial, sans-serif",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        Loading secure client dashboard...
-      </main>
-    );
-  }
-
-  const summaryCards = [
-    {
-      title: "Revenue",
-      value: `£${summary.revenue.toLocaleString("en-GB", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`,
-    },
-    {
-      title: "Net Profit",
-      value: `£${summary.profit.toLocaleString("en-GB", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`,
-    },
-    {
-      title: "ESG Score",
-      value: `${summary.esgScore.toFixed(1)}/100`,
-    },
-    {
-      title: "Carbon Emissions",
-      value: `${summary.carbon.toFixed(2)} kg CO₂e`,
-    },
-    {
-      title: "Sustainable Finance",
-      value: `${summary.sustainablePercentage.toFixed(1)}%`,
-    },
-  ];
-
-  const cards = [
-    {
-      title: "Financial Overview",
-      description: "View financial performance and accounting insights.",
-      href: "/financial",
-    },
-    {
-      title: "ESG Performance",
-      description: "Track environmental, social and governance metrics.",
-      href: "/esg",
-    },
-    {
-      title: "Carbon & Energy",
-      description: "Monitor carbon emissions and energy performance.",
-      href: "/carbon-energy",
-    },
-    {
-      title: "Sustainable Finance",
-      description: "Track sustainable investments and finance indicators.",
-      href: "/sustainable-finance",
-    },
-    {
-      title: "AI Insights",
-      description: "View automated financial and sustainability insights.",
-      href: "/ai-insights",
-    },
-    {
-      title: "Documents",
-      description: "Access your client accounting and reporting documents.",
-      href: "/documents",
-    },
-  ];
+  const green = "#0b5d4b";
 
   return (
     <main
       style={{
-        fontFamily: "Arial, sans-serif",
-        background: "#f4f7f6",
         minHeight: "100vh",
-        padding: "40px",
+        background: "#f4f7f6",
+        fontFamily: "Arial, sans-serif",
+        padding: "35px",
       }}
     >
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: "20px",
-          flexWrap: "wrap",
+          maxWidth: "1400px",
+          margin: "0 auto",
         }}
       >
-        <div>
-          <h1 style={{ color: "#0b5d4b", marginBottom: "10px" }}>
-            N&T AI-Powered Sustainable Finance & Accounting
-          </h1>
-
-          <p style={{ margin: 0, color: "#555" }}>
-            Secure Client Portal
-          </p>
-        </div>
-
-        <button
-          onClick={handleLogout}
+        <div
           style={{
-            background: "#0b5d4b",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            padding: "12px 24px",
-            fontWeight: "bold",
-            cursor: "pointer",
+            display: "flex",
+            justifyContent: "space-between",
+            gap: "20px",
+            flexWrap: "wrap",
+            alignItems: "center",
           }}
         >
-          Logout
-        </button>
-      </div>
-
-      <hr
-        style={{
-          margin: "25px 0",
-          border: "none",
-          borderTop: "1px solid #ddd",
-        }}
-      />
-
-      <h2>Welcome to Your Business & Sustainability Dashboard</h2>
-
-      <p style={{ color: "#555", lineHeight: "1.6" }}>
-        View your latest financial, ESG, carbon and sustainable finance
-        information from one secure platform.
-      </p>
-
-      <div
-        style={{
-          background: "white",
-          padding: "20px",
-          borderRadius: "12px",
-          marginTop: "20px",
-          boxShadow: "0 3px 12px rgba(0,0,0,0.05)",
-        }}
-      >
-        <p style={{ margin: "5px 0" }}>
-          Logged in as: <strong>{email}</strong>
-        </p>
-
-        <p style={{ margin: "5px 0" }}>
-          Client ID: <strong>{clientId || "Not assigned"}</strong>
-        </p>
-
-        <p style={{ margin: "5px 0" }}>
-          Client Name: <strong>{clientName || "Not assigned"}</strong>
-        </p>
-      </div>
-
-      <h2 style={{ marginTop: "35px", color: "#0b5d4b" }}>
-        Business & Sustainability Snapshot
-      </h2>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
-          gap: "18px",
-          marginTop: "20px",
-        }}
-      >
-        {summaryCards.map((card) => (
-          <div
-            key={card.title}
-            style={{
-              background: "white",
-              padding: "24px",
-              borderRadius: "12px",
-              boxShadow: "0 3px 12px rgba(0,0,0,0.06)",
-              borderTop: "4px solid #0b5d4b",
-            }}
-          >
-            <p
+          <div>
+            <h1
               style={{
                 margin: 0,
-                color: "#666",
-                fontSize: "14px",
+                color: green,
               }}
             >
-              {card.title}
-            </p>
+              N&T AI-Powered Sustainable Finance & Accounting Platform
+            </h1>
 
-            <h3
+            <p
               style={{
-                color: "#0b5d4b",
-                marginTop: "12px",
-                marginBottom: 0,
-                fontSize: "22px",
+                color: "#555",
+                marginTop: "10px",
               }}
             >
-              {card.value}
-            </h3>
+              Multi-Client Platform Architecture
+            </p>
           </div>
-        ))}
-      </div>
 
-      <h2 style={{ marginTop: "45px", marginBottom: "20px" }}>
-        Performance Charts
-      </h2>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-          gap: "22px",
-        }}
-      >
-        <BarChart
-          title="Financial Performance"
-          items={[
-            {
-              label: "Revenue",
-              value: summary.revenue,
-              prefix: "£",
-            },
-            {
-              label: "Expenses",
-              value: summary.expenses,
-              prefix: "£",
-            },
-            {
-              label: "Net Profit",
-              value: summary.profit,
-              prefix: "£",
-            },
-          ]}
-        />
-
-        <BarChart
-          title="ESG Performance"
-          items={[
-            {
-              label: "Environmental",
-              value: summary.environmental,
-            },
-            {
-              label: "Social",
-              value: summary.social,
-            },
-            {
-              label: "Governance",
-              value: summary.governance,
-            },
-          ]}
-          suffix="/100"
-        />
-
-        <BarChart
-          title="Carbon & Energy Activity"
-          items={[
-            {
-              label: "Electricity",
-              value: summary.electricity,
-            },
-            {
-              label: "Gas",
-              value: summary.gas,
-            },
-            {
-              label: "Business Travel",
-              value: summary.travel,
-            },
-          ]}
-        />
-
-        <BarChart
-          title="Sustainable Finance Allocation"
-          items={[
-            {
-              label: "Green Investment",
-              value: summary.greenInvestment,
-              prefix: "£",
-            },
-            {
-              label: "Sustainable Loans",
-              value: summary.sustainableLoans,
-              prefix: "£",
-            },
-            {
-              label: "ESG Funds",
-              value: summary.esgFunds,
-              prefix: "£",
-            },
-          ]}
-        />
-      </div>
-
-      <h2 style={{ marginTop: "45px", marginBottom: "20px" }}>
-        Client Portal Services
-      </h2>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "20px",
-        }}
-      >
-        {cards.map((card) => (
-          <div
-            key={card.href}
+          <Link
+            href="/"
             style={{
-              background: "white",
-              padding: "30px",
-              borderRadius: "12px",
-              boxShadow: "0 3px 12px rgba(0,0,0,0.06)",
+              background: green,
+              color: "white",
+              padding: "12px 20px",
+              borderRadius: "8px",
+              textDecoration: "none",
+              fontWeight: "bold",
             }}
           >
-            <h3 style={{ color: "#0b5d4b" }}>{card.title}</h3>
+            ← Back to Dashboard
+          </Link>
+        </div>
 
-            <p style={{ lineHeight: "1.5", color: "#555" }}>
-              {card.description}
+        <hr
+          style={{
+            border: "none",
+            borderTop: "1px solid #ddd",
+            margin: "28px 0",
+          }}
+        />
+
+        <section style={{ marginBottom: "28px" }}>
+          <h2 style={{ color: green }}>1. Access Layer</h2>
+
+          <div
+            style={{
+              ...box,
+              textAlign: "center",
+              maxWidth: "650px",
+              margin: "0 auto",
+              borderTop: `5px solid ${green}`,
+            }}
+          >
+            <h2 style={{ marginBottom: "8px" }}>🔐 Secure Authentication</h2>
+
+            <p style={{ margin: "5px 0" }}>
+              Supabase Authentication
             </p>
 
-            <Link
-              href={card.href}
-              style={{
-                color: "#0b5d4b",
-                fontWeight: "bold",
-                textDecoration: "none",
-              }}
-            >
-              Open →
-            </Link>
+            <p style={{ margin: "5px 0", color: "#666" }}>
+              Email / Password • Secure Login • Role-Based Access
+            </p>
           </div>
-        ))}
-      </div>
+        </section>
 
-      <p
-        style={{
-          marginTop: "35px",
-          fontSize: "13px",
-          color: "#777",
-          textAlign: "center",
-        }}
-      >
-        N&T AI-Powered Sustainable Finance & Accounting — Secure Client
-        Reporting Portal
-      </p>
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: "28px",
+            color: green,
+            margin: "8px 0",
+          }}
+        >
+          ↓
+        </div>
+
+        <section style={{ marginBottom: "28px" }}>
+          <h2 style={{ color: green }}>2. Portal Layer</h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+              gap: "20px",
+            }}
+          >
+            <div style={{ ...box, borderTop: "5px solid #2e7d32" }}>
+              <h2>👨‍💼 N&T Admin Portal</h2>
+
+              <p>Manage clients and account information.</p>
+              <p>Monitor business, financial and sustainability data.</p>
+              <p>Access reports and client management tools.</p>
+            </div>
+
+            <div style={{ ...box, borderTop: "5px solid #1976d2" }}>
+              <h2>👥 Client Portal</h2>
+
+              <p>Each client has a secure login.</p>
+              <p>Each client views only their own information.</p>
+              <p>Access financial, ESG, carbon and reporting tools.</p>
+            </div>
+          </div>
+        </section>
+
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: "28px",
+            color: green,
+          }}
+        >
+          ↓
+        </div>
+
+        <section style={{ marginBottom: "28px" }}>
+          <h2 style={{ color: green }}>3. Client Layer</h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: "16px",
+            }}
+          >
+            {["Client A", "Client B", "Client C", "Client D", "Client E"].map(
+              (client) => (
+                <div
+                  key={client}
+                  style={{
+                    ...box,
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{ fontSize: "35px" }}>🏢</div>
+                  <h3>{client}</h3>
+                  <p style={{ color: "#666" }}>
+                    Company / Organisation
+                  </p>
+                </div>
+              )
+            )}
+          </div>
+        </section>
+
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: "28px",
+            color: green,
+          }}
+        >
+          ↓
+        </div>
+
+        <section style={{ marginBottom: "28px" }}>
+          <h2 style={{ color: green }}>4. Module Layer</h2>
+
+          <p style={{ color: "#555" }}>
+            Each client will have access to their own isolated portal modules.
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: "16px",
+            }}
+          >
+            {[
+              ["📊", "Financial", "Accounting and financial data"],
+              ["🌿", "ESG", "Environmental, Social and Governance"],
+              ["🌍", "Carbon & Energy", "Emissions and energy tracking"],
+              [
+                "💚",
+                "Sustainable Finance",
+                "Investment and sustainable finance metrics",
+              ],
+              ["🧠", "AI Insights", "Automated analysis and insights"],
+              ["📁", "Documents", "Secure document management"],
+              ["📄", "Reports", "Client analytics and reports"],
+            ].map(([icon, title, description]) => (
+              <div
+                key={title}
+                style={{
+                  ...box,
+                  textAlign: "center",
+                  borderTop: `4px solid ${green}`,
+                }}
+              >
+                <div style={{ fontSize: "35px" }}>{icon}</div>
+                <h3 style={{ color: green }}>{title}</h3>
+                <p style={{ color: "#666" }}>{description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: "28px",
+            color: green,
+          }}
+        >
+          ↓
+        </div>
+
+        <section style={{ marginBottom: "28px" }}>
+          <h2 style={{ color: green }}>5. Data & Storage Layer</h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+              gap: "18px",
+            }}
+          >
+            <div style={box}>
+              <h3>🗄️ Supabase Database</h3>
+              <p>Structured client data storage.</p>
+              <p>Financial, ESG, carbon and sustainability information.</p>
+            </div>
+
+            <div style={box}>
+              <h3>📂 Secure File Storage</h3>
+              <p>Client document storage.</p>
+              <p>Secure access to uploaded files.</p>
+            </div>
+
+            <div style={box}>
+              <h3>🛡️ Row Level Security</h3>
+              <p>Clients access only their own information.</p>
+              <p>Data isolation between client accounts.</p>
+            </div>
+
+            <div style={box}>
+              <h3>🔄 Backup & Security</h3>
+              <p>Secure platform architecture.</p>
+              <p>Data protection and future backup controls.</p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 style={{ color: green }}>6. Platform Benefits</h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: "16px",
+            }}
+          >
+            {[
+              "✅ Complete Client Data Isolation",
+              "✅ Secure Role-Based Access",
+              "✅ Multi-Client Scalability",
+              "✅ Centralised N&T Management",
+              "✅ Financial & ESG Reporting",
+              "✅ AI-Powered Sustainable Finance Roadmap",
+            ].map((benefit) => (
+              <div
+                key={benefit}
+                style={{
+                  ...box,
+                  fontWeight: "bold",
+                  color: "#333",
+                }}
+              >
+                {benefit}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <p
+          style={{
+            textAlign: "center",
+            marginTop: "40px",
+            color: "#777",
+            fontSize: "13px",
+          }}
+        >
+          N&T AI-Powered Sustainable Finance & Accounting — Platform
+          Architecture
+        </p>
+      </div>
     </main>
   );
 }
