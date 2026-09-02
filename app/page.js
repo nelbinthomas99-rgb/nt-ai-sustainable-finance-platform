@@ -10,6 +10,69 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 );
 
+function BarChart({ title, items, suffix = "" }) {
+  const maxValue = Math.max(...items.map((item) => item.value), 1);
+
+  return (
+    <div
+      style={{
+        background: "white",
+        padding: "24px",
+        borderRadius: "14px",
+        boxShadow: "0 3px 12px rgba(0,0,0,0.06)",
+      }}
+    >
+      <h3 style={{ color: "#0b5d4b", marginTop: 0 }}>{title}</h3>
+
+      {items.map((item) => {
+        const width = (item.value / maxValue) * 100;
+
+        return (
+          <div key={item.label} style={{ marginBottom: "18px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: "7px",
+                gap: "15px",
+              }}
+            >
+              <span style={{ fontWeight: "600" }}>{item.label}</span>
+
+              <span>
+                {item.prefix || ""}
+                {Number(item.value).toLocaleString("en-GB", {
+                  maximumFractionDigits: 2,
+                })}
+                {suffix}
+              </span>
+            </div>
+
+            <div
+              style={{
+                width: "100%",
+                height: "14px",
+                background: "#e6ecea",
+                borderRadius: "20px",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  width: `${width}%`,
+                  height: "100%",
+                  background: "#0b5d4b",
+                  borderRadius: "20px",
+                }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function Home() {
   const router = useRouter();
 
@@ -20,9 +83,20 @@ export default function Home() {
 
   const [summary, setSummary] = useState({
     revenue: 0,
+    expenses: 0,
     profit: 0,
+    environmental: 0,
+    social: 0,
+    governance: 0,
     esgScore: 0,
+    electricity: 0,
+    gas: 0,
+    travel: 0,
     carbon: 0,
+    greenInvestment: 0,
+    sustainableLoans: 0,
+    esgFunds: 0,
+    totalFinance: 0,
     sustainablePercentage: 0,
   });
 
@@ -112,6 +186,10 @@ export default function Home() {
           ? (environmental + social + governance) / 3
           : 0;
 
+      const electricity = Number(carbon.data?.electricity_kwh || 0);
+      const gas = Number(carbon.data?.gas_kwh || 0);
+      const travel = Number(carbon.data?.travel_km || 0);
+
       const carbonTotal = Number(
         carbon.data?.carbon_emissions_kg || 0
       );
@@ -144,9 +222,20 @@ export default function Home() {
 
       setSummary({
         revenue,
+        expenses,
         profit,
+        environmental,
+        social,
+        governance,
         esgScore,
+        electricity,
+        gas,
+        travel,
         carbon: carbonTotal,
+        greenInvestment,
+        sustainableLoans,
+        esgFunds,
+        totalFinance,
         sustainablePercentage,
       });
 
@@ -242,14 +331,12 @@ export default function Home() {
     },
     {
       title: "AI Insights",
-      description:
-        "View automated financial and sustainability insights.",
+      description: "View automated financial and sustainability insights.",
       href: "/ai-insights",
     },
     {
       title: "Documents",
-      description:
-        "Access your client accounting and reporting documents.",
+      description: "Access your client accounting and reporting documents.",
       href: "/documents",
     },
   ];
@@ -273,21 +360,11 @@ export default function Home() {
         }}
       >
         <div>
-          <h1
-            style={{
-              color: "#0b5d4b",
-              marginBottom: "10px",
-            }}
-          >
+          <h1 style={{ color: "#0b5d4b", marginBottom: "10px" }}>
             N&T AI-Powered Sustainable Finance & Accounting
           </h1>
 
-          <p
-            style={{
-              margin: 0,
-              color: "#555",
-            }}
-          >
+          <p style={{ margin: 0, color: "#555" }}>
             Secure Client Portal
           </p>
         </div>
@@ -318,12 +395,7 @@ export default function Home() {
 
       <h2>Welcome to Your Business & Sustainability Dashboard</h2>
 
-      <p
-        style={{
-          color: "#555",
-          lineHeight: "1.6",
-        }}
-      >
+      <p style={{ color: "#555", lineHeight: "1.6" }}>
         View your latest financial, ESG, carbon and sustainable finance
         information from one secure platform.
       </p>
@@ -350,20 +422,14 @@ export default function Home() {
         </p>
       </div>
 
-      <h2
-        style={{
-          marginTop: "35px",
-          color: "#0b5d4b",
-        }}
-      >
+      <h2 style={{ marginTop: "35px", color: "#0b5d4b" }}>
         Business & Sustainability Snapshot
       </h2>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(190px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
           gap: "18px",
           marginTop: "20px",
         }}
@@ -403,20 +469,105 @@ export default function Home() {
         ))}
       </div>
 
-      <h2
+      <h2 style={{ marginTop: "45px", marginBottom: "20px" }}>
+        Performance Charts
+      </h2>
+
+      <div
         style={{
-          marginTop: "40px",
-          marginBottom: "20px",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+          gap: "22px",
         }}
       >
+        <BarChart
+          title="Financial Performance"
+          items={[
+            {
+              label: "Revenue",
+              value: summary.revenue,
+              prefix: "£",
+            },
+            {
+              label: "Expenses",
+              value: summary.expenses,
+              prefix: "£",
+            },
+            {
+              label: "Net Profit",
+              value: summary.profit,
+              prefix: "£",
+            },
+          ]}
+        />
+
+        <BarChart
+          title="ESG Performance"
+          items={[
+            {
+              label: "Environmental",
+              value: summary.environmental,
+            },
+            {
+              label: "Social",
+              value: summary.social,
+            },
+            {
+              label: "Governance",
+              value: summary.governance,
+            },
+          ]}
+          suffix="/100"
+        />
+
+        <BarChart
+          title="Carbon & Energy Activity"
+          items={[
+            {
+              label: "Electricity",
+              value: summary.electricity,
+            },
+            {
+              label: "Gas",
+              value: summary.gas,
+            },
+            {
+              label: "Business Travel",
+              value: summary.travel,
+            },
+          ]}
+        />
+
+        <BarChart
+          title="Sustainable Finance Allocation"
+          items={[
+            {
+              label: "Green Investment",
+              value: summary.greenInvestment,
+              prefix: "£",
+            },
+            {
+              label: "Sustainable Loans",
+              value: summary.sustainableLoans,
+              prefix: "£",
+            },
+            {
+              label: "ESG Funds",
+              value: summary.esgFunds,
+              prefix: "£",
+            },
+          ]}
+        />
+      </div>
+
+      <h2 style={{ marginTop: "45px", marginBottom: "20px" }}>
         Client Portal Services
       </h2>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(220px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
           gap: "20px",
         }}
       >
@@ -430,16 +581,9 @@ export default function Home() {
               boxShadow: "0 3px 12px rgba(0,0,0,0.06)",
             }}
           >
-            <h3 style={{ color: "#0b5d4b" }}>
-              {card.title}
-            </h3>
+            <h3 style={{ color: "#0b5d4b" }}>{card.title}</h3>
 
-            <p
-              style={{
-                lineHeight: "1.5",
-                color: "#555",
-              }}
-            >
+            <p style={{ lineHeight: "1.5", color: "#555" }}>
               {card.description}
             </p>
 
