@@ -35,9 +35,7 @@ function Icon({ type, size = 22 }) {
       </>
     ),
     carbon: (
-      <>
-        <path d="M8 18h9a4 4 0 0 0 .7-7.9A6 6 0 0 0 6.3 8.4 4.5 4.5 0 0 0 8 18Z" />
-      </>
+      <path d="M8 18h9a4 4 0 0 0 .7-7.9A6 6 0 0 0 6.3 8.4 4.5 4.5 0 0 0 8 18Z" />
     ),
     sustainable: (
       <>
@@ -53,11 +51,7 @@ function Icon({ type, size = 22 }) {
         <path d="M9 1v4M15 1v4M9 19v4M15 19v4M1 9h4M1 15h4M19 9h4M19 15h4" />
       </>
     ),
-    documents: (
-      <>
-        <path d="M4 5h6l2 2h8v12H4V5Z" />
-      </>
-    ),
+    documents: <path d="M4 5h6l2 2h8v12H4V5Z" />,
     architecture: (
       <>
         <circle cx="12" cy="5" r="2" />
@@ -104,7 +98,10 @@ function MiniBars({ values }) {
       {values.map((value, index) => (
         <span
           key={index}
-          style={{ height: `${Math.max((value / max) * 100, 12)}%` }}
+          style={{
+            height: `${Math.max((value / max) * 100, 12)}%`,
+            animationDelay: `${index * 0.1}s`,
+          }}
         />
       ))}
     </div>
@@ -224,9 +221,7 @@ export default function Home() {
         esg.data?.environmental_score ?? esg.data?.environmental ?? 0
       );
 
-      const social = Number(
-        esg.data?.social_score ?? esg.data?.social ?? 0
-      );
+      const social = Number(esg.data?.social_score ?? esg.data?.social ?? 0);
 
       const governance = Number(
         esg.data?.governance_score ?? esg.data?.governance ?? 0
@@ -251,10 +246,7 @@ export default function Home() {
       );
 
       const esgFunds = Number(sustainable.data?.esg_funds || 0);
-
-      const totalFinance = Number(
-        sustainable.data?.total_finance || 0
-      );
+      const totalFinance = Number(sustainable.data?.total_finance || 0);
 
       const sustainableTotal =
         greenInvestment + sustainableLoans + esgFunds;
@@ -310,11 +302,17 @@ export default function Home() {
   if (loading) {
     return (
       <main className="loadingScreen">
-        <div className="loadingLogo">N&T</div>
-        <div className="loadingRing" />
-        <p>Loading secure intelligence platform...</p>
-
         <style>{styles}</style>
+
+        <div className="loadingLogo">N&T</div>
+
+        <div className="loadingOrb">
+          <div className="loadingRing ringA" />
+          <div className="loadingRing ringB" />
+          <div className="loadingCore">AI</div>
+        </div>
+
+        <p>Loading secure intelligence platform...</p>
       </main>
     );
   }
@@ -339,7 +337,12 @@ export default function Home() {
   const modules = [
     ["financial", "Financial", "Accounting & Financial Data", "/financial"],
     ["esg", "ESG", "Environmental, Social & Governance", "/esg"],
-    ["carbon", "Carbon & Energy", "Emissions & Energy Tracking", "/carbon-energy"],
+    [
+      "carbon",
+      "Carbon & Energy",
+      "Emissions & Energy Tracking",
+      "/carbon-energy",
+    ],
     [
       "sustainable",
       "Sustainable Finance",
@@ -347,7 +350,12 @@ export default function Home() {
       "/sustainable-finance",
     ],
     ["ai", "AI Insights", "Automated Business Insights", "/ai-insights"],
-    ["documents", "Documents", "Secure Document Management", "/documents"],
+    [
+      "documents",
+      "Documents",
+      "Secure Document Management",
+      "/documents",
+    ],
   ];
 
   const aiMessage =
@@ -368,6 +376,7 @@ export default function Home() {
 
           <div>
             <div className="brandName">N&T</div>
+
             <div className="brandTag">
               AI-POWERED
               <br />
@@ -391,11 +400,15 @@ export default function Home() {
 
         <div className="partnerCard">
           <div className="partnerGlow" />
+
           <div className="partnerTitle">N&T Client Portal</div>
+
           <div className="partnerText">
             Secure. Sustainable. Intelligent.
           </div>
+
           <div className="clientCode">
+            <span className="tinyPulse" />
             {clientId || "Secure Client"}
           </div>
         </div>
@@ -415,8 +428,15 @@ export default function Home() {
           </div>
 
           <div className="profile">
-            <div className="liveDot" />
-            <div className="profileCircle">NT</div>
+            <div className="profileRadar">
+              <span className="radarCircle radarOne" />
+              <span className="radarCircle radarTwo" />
+
+              <div className="profileCircle">NT</div>
+
+              <span className="profileLiveDot" />
+            </div>
+
             <div>
               <strong>N&T Client</strong>
               <small>{email}</small>
@@ -449,49 +469,70 @@ export default function Home() {
 
           <section className="kpiGrid">
             <div className="kpiCard">
+              <div className="scanLine" />
+
               <div className="kpiTop">
                 <div className="roundIcon">
                   <Icon type="financial" />
                 </div>
+
                 <span>Revenue</span>
               </div>
 
               <h2>{money(summary.revenue)}</h2>
+
               <p>Current financial snapshot</p>
+
               <MiniBars values={[25, 37, 30, 48, 42, 62, 55, 74]} />
             </div>
 
             <div className="kpiCard goldCard">
+              <div className="scanLine goldScan" />
+
               <div className="kpiTop">
                 <div className="roundIcon gold">
                   <Icon type="financial" />
                 </div>
+
                 <span>Net Profit</span>
               </div>
 
               <h2>{money(summary.profit)}</h2>
+
               <p>Revenue less expenses</p>
+
               <MiniBars values={[20, 28, 25, 35, 32, 44, 39, 55]} />
             </div>
 
             <div className="kpiCard">
+              <div className="scanLine" />
+
               <div className="kpiTop">
                 <div className="roundIcon">
                   <Icon type="esg" />
                 </div>
+
                 <span>ESG Score</span>
               </div>
 
-              <h2>{summary.esgScore.toFixed(1)}<small>/100</small></h2>
+              <h2>
+                {summary.esgScore.toFixed(1)}
+                <small>/100</small>
+              </h2>
+
               <p>Current ESG performance</p>
+
               <MiniBars values={[35, 45, 50, 48, 60, 68, 72, 80]} />
             </div>
 
             <div className="kpiCard goldCard">
+              <div className="scanLine goldScan" />
+
               <div className="kpiTop">
                 <div className="roundIcon gold">
                   <Icon type="carbon" />
                 </div>
+
                 <span>Carbon Emissions</span>
               </div>
 
@@ -501,14 +542,20 @@ export default function Home() {
               </h2>
 
               <p>Latest calculated footprint</p>
+
               <MiniBars values={[75, 68, 62, 58, 54, 48, 45, 40]} />
             </div>
           </section>
 
           <section className="intelligenceGrid">
             <div className="impactPanel">
+              <div className="ambientLight ambientOne" />
+              <div className="ambientLight ambientTwo" />
+
               <div className="impactText">
-                <span className="eyebrow">N&T INTELLIGENCE ENGINE</span>
+                <span className="eyebrow">
+                  N&T INTELLIGENCE ENGINE
+                </span>
 
                 <h2>
                   Sustainable finance.
@@ -517,8 +564,9 @@ export default function Home() {
                 </h2>
 
                 <p>
-                  Financial, ESG, carbon and sustainable finance information
-                  combined into one secure reporting experience.
+                  Financial, ESG, carbon and sustainable finance
+                  information combined into one secure reporting
+                  experience.
                 </p>
 
                 <div className="syncState">
@@ -528,6 +576,15 @@ export default function Home() {
               </div>
 
               <div className="globeScene">
+                <div className="energyParticles">
+                  <i className="p1" />
+                  <i className="p2" />
+                  <i className="p3" />
+                  <i className="p4" />
+                  <i className="p5" />
+                  <i className="p6" />
+                </div>
+
                 <div className="orbit orbitOne">
                   <i />
                   <i />
@@ -554,7 +611,9 @@ export default function Home() {
               <div className="impactMetrics">
                 <div>
                   <span>ESG Health</span>
-                  <strong>{summary.esgScore.toFixed(0)}/100</strong>
+                  <strong>
+                    {summary.esgScore.toFixed(0)}/100
+                  </strong>
                 </div>
 
                 <div>
@@ -571,7 +630,10 @@ export default function Home() {
 
                 <div>
                   <span>Secure Session</span>
-                  <strong className="greenText">Active</strong>
+                  <strong className="greenText">
+                    <span className="tinyPulse" />
+                    Active
+                  </strong>
                 </div>
               </div>
             </div>
@@ -581,11 +643,19 @@ export default function Home() {
                 <div className="panelHeading">
                   <span className="lightning">✦</span>
                   <strong>AI Insights</strong>
-                  <span className="liveBadge">LIVE</span>
+
+                  <span className="liveBadge">
+                    <span className="tinyPulse" />
+                    LIVE
+                  </span>
                 </div>
 
                 <div className="aiBrain">
+                  <div className="brainOrbit brainOrbitOne" />
+                  <div className="brainOrbit brainOrbitTwo" />
+
                   <div className="brainCore">AI</div>
+
                   <span className="node n1" />
                   <span className="node n2" />
                   <span className="node n3" />
@@ -599,7 +669,10 @@ export default function Home() {
 
                 <p>{aiMessage}</p>
 
-                <Link href="/ai-insights" className="actionButton">
+                <Link
+                  href="/ai-insights"
+                  className="actionButton"
+                >
                   Explore AI Insights →
                 </Link>
               </div>
@@ -611,13 +684,15 @@ export default function Home() {
 
                 <div>
                   <h3>Platform Security</h3>
+
                   <p>
-                    Authenticated client session with protected database
-                    access.
+                    Authenticated client session with protected
+                    database access.
                   </p>
 
                   <span className="secureState">
-                    ● Secure session active
+                    <span className="tinyPulse" />
+                    Secure session active
                   </span>
                 </div>
               </div>
@@ -626,95 +701,154 @@ export default function Home() {
 
           <div className="sectionHeading">
             <div>
-              <span className="eyebrow">REAL-TIME OVERVIEW</span>
+              <span className="eyebrow">
+                REAL-TIME OVERVIEW
+              </span>
+
               <h2>Performance Intelligence</h2>
             </div>
 
-            <div className="currentTag">Current Snapshot</div>
+            <div className="currentTag">
+              <span className="tinyPulse" />
+              Current Snapshot
+            </div>
           </div>
 
           <section className="performanceGrid">
             <div className="performanceCard">
               <h3>
-                <Icon type="financial" /> Financial Performance
+                <Icon type="financial" />
+                Financial Performance
               </h3>
 
               <div className="metricRow">
                 <span>Revenue</span>
                 <strong>{money(summary.revenue)}</strong>
               </div>
-              <ProgressBar value={summary.revenue} max={50000} />
+
+              <ProgressBar
+                value={summary.revenue}
+                max={50000}
+              />
 
               <div className="metricRow">
                 <span>Expenses</span>
                 <strong>{money(summary.expenses)}</strong>
               </div>
-              <ProgressBar value={summary.expenses} max={50000} />
+
+              <ProgressBar
+                value={summary.expenses}
+                max={50000}
+              />
 
               <div className="metricRow">
                 <span>Net Profit</span>
                 <strong>{money(summary.profit)}</strong>
               </div>
-              <ProgressBar value={summary.profit} max={50000} gold />
+
+              <ProgressBar
+                value={summary.profit}
+                max={50000}
+                gold
+              />
             </div>
 
             <div className="performanceCard">
               <h3>
-                <Icon type="esg" /> ESG Performance
+                <Icon type="esg" />
+                ESG Performance
               </h3>
 
               <div className="metricRow">
                 <span>Environmental</span>
-                <strong>{summary.environmental}/100</strong>
+                <strong>
+                  {summary.environmental}/100
+                </strong>
               </div>
+
               <ProgressBar value={summary.environmental} />
 
               <div className="metricRow">
                 <span>Social</span>
                 <strong>{summary.social}/100</strong>
               </div>
+
               <ProgressBar value={summary.social} />
 
               <div className="metricRow">
                 <span>Governance</span>
-                <strong>{summary.governance}/100</strong>
+                <strong>
+                  {summary.governance}/100
+                </strong>
               </div>
-              <ProgressBar value={summary.governance} gold />
+
+              <ProgressBar
+                value={summary.governance}
+                gold
+              />
             </div>
 
             <div className="performanceCard">
               <h3>
-                <Icon type="carbon" /> Carbon & Energy
+                <Icon type="carbon" />
+                Carbon & Energy
               </h3>
 
               <div className="metricRow">
                 <span>Electricity</span>
-                <strong>{summary.electricity.toLocaleString()} kWh</strong>
+
+                <strong>
+                  {summary.electricity.toLocaleString()} kWh
+                </strong>
               </div>
-              <ProgressBar value={summary.electricity} max={1000} />
+
+              <ProgressBar
+                value={summary.electricity}
+                max={1000}
+              />
 
               <div className="metricRow">
                 <span>Gas</span>
-                <strong>{summary.gas.toLocaleString()} kWh</strong>
+
+                <strong>
+                  {summary.gas.toLocaleString()} kWh
+                </strong>
               </div>
-              <ProgressBar value={summary.gas} max={1000} />
+
+              <ProgressBar
+                value={summary.gas}
+                max={1000}
+              />
 
               <div className="metricRow">
                 <span>Business Travel</span>
-                <strong>{summary.travel.toLocaleString()} km</strong>
+
+                <strong>
+                  {summary.travel.toLocaleString()} km
+                </strong>
               </div>
-              <ProgressBar value={summary.travel} max={1000} gold />
+
+              <ProgressBar
+                value={summary.travel}
+                max={1000}
+                gold
+              />
             </div>
 
             <div className="performanceCard">
               <h3>
-                <Icon type="sustainable" /> Sustainable Finance
+                <Icon type="sustainable" />
+                Sustainable Finance
               </h3>
 
               <div className="metricRow">
                 <span>Green Investment</span>
-                <strong>{money(summary.greenInvestment)}</strong>
+
+                <strong>
+                  {money(summary.greenInvestment)}
+                </strong>
               </div>
+
               <ProgressBar
                 value={summary.greenInvestment}
                 max={summary.totalFinance || 100000}
@@ -722,8 +856,12 @@ export default function Home() {
 
               <div className="metricRow">
                 <span>Sustainable Loans</span>
-                <strong>{money(summary.sustainableLoans)}</strong>
+
+                <strong>
+                  {money(summary.sustainableLoans)}
+                </strong>
               </div>
+
               <ProgressBar
                 value={summary.sustainableLoans}
                 max={summary.totalFinance || 100000}
@@ -731,8 +869,10 @@ export default function Home() {
 
               <div className="metricRow">
                 <span>ESG Funds</span>
+
                 <strong>{money(summary.esgFunds)}</strong>
               </div>
+
               <ProgressBar
                 value={summary.esgFunds}
                 max={summary.totalFinance || 100000}
@@ -743,33 +883,54 @@ export default function Home() {
 
           <div className="sectionHeading moduleHeading">
             <div>
-              <span className="eyebrow">SECURE CLIENT TOOLS</span>
+              <span className="eyebrow">
+                SECURE CLIENT TOOLS
+              </span>
+
               <h2>Client Portal Modules</h2>
             </div>
           </div>
 
           <section className="moduleGrid">
-            {modules.map(([icon, title, description, href], index) => (
-              <Link href={href} className="moduleCard" key={title}>
-                <div className={`moduleOrb orb${index + 1}`}>
-                  <Icon type={icon} size={34} />
-                </div>
+            {modules.map(
+              ([icon, title, description, href], index) => (
+                <Link
+                  href={href}
+                  className="moduleCard"
+                  key={title}
+                >
+                  <div
+                    className={`moduleOrb orb${index + 1}`}
+                    style={{
+                      animationDelay: `${index * 0.25}s`,
+                    }}
+                  >
+                    <Icon type={icon} size={34} />
+                  </div>
 
-                <h3>{title}</h3>
-                <p>{description}</p>
+                  <h3>{title}</h3>
 
-                <span className="openLink">Open →</span>
-              </Link>
-            ))}
+                  <p>{description}</p>
+
+                  <span className="openLink">
+                    Open →
+                  </span>
+                </Link>
+              )
+            )}
           </section>
 
           <footer>
             <span>
-              © 2026 N&T AI-Powered Sustainable Finance & Accounting Ltd
+              © 2026 N&T AI-Powered Sustainable Finance &
+              Accounting Ltd
             </span>
 
             <span className="footerBrand">
-              N&T <small>Building a Sustainable Future.</small>
+              N&T
+              <small>
+                Building a Sustainable Future.
+              </small>
             </span>
           </footer>
         </div>
@@ -800,11 +961,20 @@ a {
 .appShell {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 70% 25%, rgba(0, 255, 166, .06), transparent 30%),
-    radial-gradient(circle at 95% 70%, rgba(218, 166, 64, .05), transparent 25%),
+    radial-gradient(
+      circle at 70% 25%,
+      rgba(0, 255, 166, 0.06),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 95% 70%,
+      rgba(218, 166, 64, 0.05),
+      transparent 25%
+    ),
     #020807;
   color: #f3f7f5;
   display: flex;
+  overflow-x: hidden;
 }
 
 .sidebar {
@@ -814,9 +984,13 @@ a {
   left: 0;
   top: 0;
   padding: 25px 18px;
-  border-right: 1px solid rgba(64, 255, 176, .13);
+  border-right: 1px solid rgba(64, 255, 176, 0.13);
   background:
-    linear-gradient(180deg, rgba(4, 30, 24, .98), rgba(1, 12, 10, .99));
+    linear-gradient(
+      180deg,
+      rgba(4, 30, 24, 0.98),
+      rgba(1, 12, 10, 0.99)
+    );
   z-index: 10;
   display: flex;
   flex-direction: column;
@@ -839,7 +1013,9 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 25px rgba(69, 255, 142, .13);
+  box-shadow:
+    0 0 25px rgba(69, 255, 142, 0.13);
+  animation: brandBreath 3s ease-in-out infinite;
 }
 
 .brandBars {
@@ -849,9 +1025,10 @@ a {
 .brandArrow {
   position: absolute;
   right: 5px;
-  top: 0px;
+  top: 0;
   color: #d8aa46;
   font-size: 20px;
+  animation: arrowFloat 1.8s ease-in-out infinite;
 }
 
 .brandName {
@@ -863,7 +1040,7 @@ a {
 
 .brandTag {
   font-size: 8px;
-  letter-spacing: .8px;
+  letter-spacing: 0.8px;
   color: #d9e3df;
   margin-top: 4px;
   line-height: 1.3;
@@ -884,31 +1061,36 @@ a {
   padding: 12px 14px;
   border-radius: 10px;
   font-size: 14px;
-  transition: .25s ease;
+  transition: 0.25s ease;
   border: 1px solid transparent;
 }
 
 .navItem:hover {
   color: #fff;
-  background: rgba(25, 133, 92, .13);
-  border-color: rgba(58, 255, 169, .12);
+  background: rgba(25, 133, 92, 0.13);
+  border-color: rgba(58, 255, 169, 0.12);
   transform: translateX(4px);
 }
 
 .navActive {
   color: white;
   background:
-    linear-gradient(90deg, rgba(19, 113, 72, .75), rgba(8, 71, 50, .45));
-  border: 1px solid rgba(70, 255, 158, .55);
+    linear-gradient(
+      90deg,
+      rgba(19, 113, 72, 0.75),
+      rgba(8, 71, 50, 0.45)
+    );
+  border: 1px solid rgba(70, 255, 158, 0.55);
   box-shadow:
     inset 3px 0 0 #cfa43d,
-    0 0 22px rgba(24, 255, 136, .11);
+    0 0 22px rgba(24, 255, 136, 0.11);
+  animation: activeNavGlow 3s ease-in-out infinite;
 }
 
 .partnerCard {
   margin-top: auto;
-  border: 1px solid rgba(82, 255, 172, .25);
-  background: rgba(8, 48, 37, .43);
+  border: 1px solid rgba(82, 255, 172, 0.25);
+  background: rgba(8, 48, 37, 0.43);
   border-radius: 13px;
   padding: 16px;
   position: relative;
@@ -919,10 +1101,11 @@ a {
   position: absolute;
   width: 100px;
   height: 100px;
-  background: rgba(53, 255, 158, .12);
+  background: rgba(53, 255, 158, 0.12);
   filter: blur(35px);
   right: -30px;
   top: -30px;
+  animation: partnerGlowMove 4s ease-in-out infinite;
 }
 
 .partnerTitle {
@@ -939,6 +1122,9 @@ a {
   color: #d2ad5d;
   font-size: 11px;
   margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 
 .logoutButton {
@@ -960,7 +1146,7 @@ a {
 
 .topbar {
   height: 72px;
-  border-bottom: 1px solid rgba(54, 255, 166, .12);
+  border-bottom: 1px solid rgba(54, 255, 166, 0.12);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -969,13 +1155,13 @@ a {
   top: 0;
   z-index: 8;
   backdrop-filter: blur(18px);
-  background: rgba(2, 10, 8, .84);
+  background: rgba(2, 10, 8, 0.84);
 }
 
 .searchBox {
   width: min(410px, 45vw);
   height: 40px;
-  border: 1px solid rgba(48, 239, 156, .28);
+  border: 1px solid rgba(48, 239, 156, 0.28);
   border-radius: 9px;
   display: flex;
   align-items: center;
@@ -983,7 +1169,7 @@ a {
   gap: 9px;
   color: #83978f;
   font-size: 13px;
-  background: rgba(7, 35, 28, .45);
+  background: rgba(7, 35, 28, 0.45);
 }
 
 .searchIcon {
@@ -995,14 +1181,23 @@ a {
   margin-left: auto;
   padding: 5px 8px;
   border-radius: 6px;
-  border: 1px solid rgba(67, 255, 171, .23);
+  border: 1px solid rgba(67, 255, 171, 0.23);
   color: #77f6ae;
+  animation: aiSearchPulse 2.2s ease-in-out infinite;
 }
 
 .profile {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
+}
+
+.profileRadar {
+  width: 44px;
+  height: 44px;
+  position: relative;
+  display: grid;
+  place-items: center;
 }
 
 .profileCircle {
@@ -1015,6 +1210,39 @@ a {
   font-family: Georgia, serif;
   color: #dbb459;
   background: #071711;
+  position: relative;
+  z-index: 3;
+  animation: profileCoreGlow 2.2s ease-in-out infinite;
+}
+
+.radarCircle {
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  border: 1px solid rgba(82, 255, 145, 0.75);
+  opacity: 0;
+  z-index: 1;
+}
+
+.radarOne {
+  animation: profileRadar 2.4s ease-out infinite;
+}
+
+.radarTwo {
+  animation: profileRadar 2.4s ease-out infinite 1.2s;
+}
+
+.profileLiveDot {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  right: 0;
+  bottom: 1px;
+  border-radius: 50%;
+  background: #43f987;
+  border: 2px solid #04110d;
+  z-index: 5;
+  animation: liveBlinkPremium 1.25s ease-in-out infinite;
 }
 
 .profile strong {
@@ -1031,18 +1259,20 @@ a {
   text-overflow: ellipsis;
 }
 
-.liveDot,
-.pulseDot {
+.pulseDot,
+.tinyPulse {
   width: 8px;
   height: 8px;
   background: #42f587;
   border-radius: 50%;
   box-shadow: 0 0 10px #42f587;
+  display: inline-block;
+  animation: liveBlinkPremium 1.3s ease-in-out infinite;
 }
 
-.pulseDot {
-  display: inline-block;
-  animation: pulse 1.8s infinite;
+.tinyPulse {
+  width: 6px;
+  height: 6px;
 }
 
 .content {
@@ -1067,6 +1297,8 @@ a {
 
 .welcomeRow h1 span {
   color: #38e988;
+  text-shadow:
+    0 0 18px rgba(56, 233, 136, 0.18);
 }
 
 .welcomeRow p {
@@ -1079,7 +1311,7 @@ a {
   display: inline-block;
   margin-top: 9px;
   padding: 6px 10px;
-  border: 1px solid rgba(50, 238, 151, .18);
+  border: 1px solid rgba(50, 238, 151, 0.18);
   border-radius: 20px;
   color: #a7bcb4;
   font-size: 10px;
@@ -1087,7 +1319,7 @@ a {
 
 .statusPill {
   color: #75e6a2;
-  border: 1px solid rgba(69, 248, 150, .21);
+  border: 1px solid rgba(69, 248, 150, 0.21);
   padding: 8px 12px;
   border-radius: 20px;
   display: flex;
@@ -1095,6 +1327,7 @@ a {
   align-items: center;
   font-size: 9px;
   letter-spacing: 1px;
+  animation: livePanelGlow 2.8s ease-in-out infinite;
 }
 
 .kpiGrid {
@@ -1105,14 +1338,45 @@ a {
 
 .kpiCard {
   background:
-    linear-gradient(145deg, rgba(5, 30, 23, .95), rgba(4, 18, 15, .96));
-  border: 1px solid rgba(57, 237, 157, .19);
+    linear-gradient(
+      145deg,
+      rgba(5, 30, 23, 0.95),
+      rgba(4, 18, 15, 0.96)
+    );
+  border: 1px solid rgba(57, 237, 157, 0.19);
   border-radius: 14px;
   padding: 18px;
   min-height: 145px;
   position: relative;
   overflow: hidden;
-  transition: .3s ease;
+  transition: 0.3s ease;
+}
+
+.scanLine {
+  position: absolute;
+  height: 1px;
+  width: 70%;
+  top: 0;
+  left: -80%;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(60, 255, 164, 0.8),
+      transparent
+    );
+  box-shadow: 0 0 12px rgba(60, 255, 164, 0.5);
+  animation: cardScan 5s linear infinite;
+}
+
+.goldScan {
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(230, 178, 66, 0.85),
+      transparent
+    );
 }
 
 .kpiCard::after {
@@ -1121,19 +1385,21 @@ a {
   inset: auto -30px -45px auto;
   width: 100px;
   height: 100px;
-  background: rgba(23, 255, 140, .06);
+  background: rgba(23, 255, 140, 0.06);
   border-radius: 50%;
   filter: blur(25px);
 }
 
 .kpiCard:hover {
-  transform: translateY(-4px);
-  border-color: rgba(62, 255, 167, .43);
-  box-shadow: 0 12px 35px rgba(0, 0, 0, .35);
+  transform: translateY(-5px) scale(1.01);
+  border-color: rgba(62, 255, 167, 0.43);
+  box-shadow:
+    0 12px 35px rgba(0, 0, 0, 0.35),
+    0 0 30px rgba(26, 255, 145, 0.06);
 }
 
 .goldCard {
-  border-color: rgba(209, 164, 65, .19);
+  border-color: rgba(209, 164, 65, 0.19);
 }
 
 .kpiTop {
@@ -1152,13 +1418,14 @@ a {
   border: 1px solid #25db77;
   border-radius: 50%;
   color: #52ee8d;
-  background: rgba(24, 139, 78, .15);
+  background: rgba(24, 139, 78, 0.15);
+  animation: iconBreath 3s ease-in-out infinite;
 }
 
 .roundIcon.gold {
   color: #e1b348;
   border-color: #d29b20;
-  background: rgba(200, 141, 18, .1);
+  background: rgba(200, 141, 18, 0.1);
 }
 
 .kpiCard h2 {
@@ -1189,14 +1456,19 @@ a {
 .miniBars span {
   flex: 1;
   max-width: 18px;
-  background: linear-gradient(180deg, #44fa8f, #0d6c47);
+  background:
+    linear-gradient(180deg, #44fa8f, #0d6c47);
   border-radius: 2px 2px 0 0;
-  opacity: .78;
-  animation: barGlow 3s ease-in-out infinite alternate;
+  opacity: 0.78;
+  animation:
+    barGlow 2.5s ease-in-out infinite alternate,
+    barMotion 3s ease-in-out infinite alternate;
+  transform-origin: bottom;
 }
 
 .goldCard .miniBars span {
-  background: linear-gradient(180deg, #f0bc4f, #875d08);
+  background:
+    linear-gradient(180deg, #f0bc4f, #875d08);
 }
 
 .intelligenceGrid {
@@ -1208,13 +1480,21 @@ a {
 
 .impactPanel {
   min-height: 320px;
-  border: 1px solid rgba(51, 242, 157, .2);
+  border: 1px solid rgba(51, 242, 157, 0.2);
   border-radius: 15px;
   background:
-    radial-gradient(circle at center, rgba(0, 255, 157, .07), transparent 42%),
-    linear-gradient(145deg, rgba(4, 26, 20, .97), rgba(2, 14, 12, .99));
+    radial-gradient(
+      circle at center,
+      rgba(0, 255, 157, 0.07),
+      transparent 42%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(4, 26, 20, 0.97),
+      rgba(2, 14, 12, 0.99)
+    );
   display: grid;
-  grid-template-columns: 1fr 1.6fr .9fr;
+  grid-template-columns: 1fr 1.6fr 0.9fr;
   gap: 12px;
   padding: 22px;
   overflow: hidden;
@@ -1225,12 +1505,44 @@ a {
   content: "";
   position: absolute;
   inset: 0;
-  opacity: .11;
+  opacity: 0.11;
   background-image:
-    linear-gradient(rgba(38, 248, 154, .15) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(38, 248, 154, .15) 1px, transparent 1px);
+    linear-gradient(
+      rgba(38, 248, 154, 0.15) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(38, 248, 154, 0.15) 1px,
+      transparent 1px
+    );
   background-size: 35px 35px;
   pointer-events: none;
+  animation: gridMove 16s linear infinite;
+}
+
+.ambientLight {
+  position: absolute;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+.ambientOne {
+  background: #1cff94;
+  left: 35%;
+  top: 10%;
+  animation: ambientMoveOne 7s ease-in-out infinite;
+}
+
+.ambientTwo {
+  background: #ddb14b;
+  right: 10%;
+  bottom: -70px;
+  animation: ambientMoveTwo 8s ease-in-out infinite;
 }
 
 .impactText {
@@ -1283,17 +1595,28 @@ a {
   width: 180px;
   height: 180px;
   border-radius: 50%;
-  border: 1px solid rgba(72, 255, 186, .67);
+  border: 1px solid rgba(72, 255, 186, 0.67);
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(circle at 38% 35%, rgba(55, 255, 186, .2), transparent 22%),
-    radial-gradient(circle at 50% 50%, #0b553f 0%, #063127 43%, #021612 72%);
+    radial-gradient(
+      circle at 38% 35%,
+      rgba(55, 255, 186, 0.2),
+      transparent 22%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      #0b553f 0%,
+      #063127 43%,
+      #021612 72%
+    );
   box-shadow:
-    inset -20px -15px 40px rgba(0, 0, 0, .65),
-    inset 12px 10px 30px rgba(68, 255, 182, .16),
-    0 0 45px rgba(23, 255, 171, .23);
-  animation: globeFloat 4s ease-in-out infinite;
+    inset -20px -15px 40px rgba(0, 0, 0, 0.65),
+    inset 12px 10px 30px rgba(68, 255, 182, 0.16),
+    0 0 45px rgba(23, 255, 171, 0.23);
+  animation:
+    globeFloat 4s ease-in-out infinite,
+    globeGlowPulse 3s ease-in-out infinite;
   z-index: 3;
 }
 
@@ -1302,7 +1625,11 @@ a {
   position: absolute;
   inset: 7px;
   border-radius: 50%;
-  border: 1px solid rgba(121, 255, 210, .18);
+  border: 1px solid rgba(121, 255, 210, 0.18);
+}
+
+.globeGridOne {
+  animation: globeRotate 14s linear infinite;
 }
 
 .globeGridOne::before,
@@ -1312,7 +1639,7 @@ a {
   left: 50%;
   top: 0;
   height: 100%;
-  border-left: 1px solid rgba(117, 255, 207, .18);
+  border-left: 1px solid rgba(117, 255, 207, 0.18);
 }
 
 .globeGridOne::after {
@@ -1320,13 +1647,17 @@ a {
 }
 
 .globeGridTwo {
-  transform: scaleX(.5);
+  transform: scaleX(0.5);
+  animation: globeRotateReverse 18s linear infinite;
 }
 
 .continent {
   position: absolute;
-  background: rgba(52, 230, 146, .62);
-  filter: drop-shadow(0 0 5px rgba(45, 255, 164, .4));
+  background: rgba(52, 230, 146, 0.62);
+  filter:
+    drop-shadow(
+      0 0 5px rgba(45, 255, 164, 0.4)
+    );
 }
 
 .c1 {
@@ -1360,14 +1691,14 @@ a {
   inset: 30%;
   background: #62ffbd;
   filter: blur(25px);
-  opacity: .2;
+  opacity: 0.2;
 }
 
 .orbit {
   position: absolute;
   width: 250px;
   height: 95px;
-  border: 1px solid rgba(65, 255, 173, .28);
+  border: 1px solid rgba(65, 255, 173, 0.28);
   border-radius: 50%;
   transform: rotate(-15deg);
   animation: orbitSpin 9s linear infinite;
@@ -1377,7 +1708,7 @@ a {
   width: 230px;
   height: 80px;
   transform: rotate(35deg);
-  border-color: rgba(223, 175, 70, .25);
+  border-color: rgba(223, 175, 70, 0.25);
   animation-duration: 12s;
   animation-direction: reverse;
 }
@@ -1405,9 +1736,10 @@ a {
 .platformRing {
   position: absolute;
   height: 22px;
-  border: 1px solid rgba(64, 255, 180, .35);
+  border: 1px solid rgba(64, 255, 180, 0.35);
   border-radius: 50%;
   bottom: 35px;
+  animation: ringPulse 2.4s ease-in-out infinite;
 }
 
 .ring1 {
@@ -1417,13 +1749,62 @@ a {
 .ring2 {
   width: 190px;
   bottom: 39px;
-  border-color: rgba(208, 166, 69, .36);
+  border-color: rgba(208, 166, 69, 0.36);
+  animation-delay: 0.4s;
 }
 
 .ring3 {
   width: 140px;
   bottom: 43px;
-  box-shadow: 0 0 25px rgba(54, 255, 176, .18);
+  box-shadow:
+    0 0 25px rgba(54, 255, 176, 0.18);
+  animation-delay: 0.8s;
+}
+
+.energyParticles i {
+  width: 5px;
+  height: 5px;
+  position: absolute;
+  border-radius: 50%;
+  background: #48f896;
+  box-shadow: 0 0 9px #48f896;
+  z-index: 5;
+  animation: particleFloat 4s ease-in-out infinite;
+}
+
+.energyParticles .p1 {
+  left: 15%;
+  top: 35%;
+}
+
+.energyParticles .p2 {
+  right: 16%;
+  top: 28%;
+  animation-delay: 0.5s;
+}
+
+.energyParticles .p3 {
+  left: 23%;
+  bottom: 28%;
+  animation-delay: 1s;
+}
+
+.energyParticles .p4 {
+  right: 22%;
+  bottom: 25%;
+  animation-delay: 1.5s;
+}
+
+.energyParticles .p5 {
+  left: 48%;
+  top: 12%;
+  animation-delay: 2s;
+}
+
+.energyParticles .p6 {
+  right: 45%;
+  bottom: 10%;
+  animation-delay: 2.5s;
 }
 
 .impactMetrics {
@@ -1432,7 +1813,7 @@ a {
 }
 
 .impactMetrics div {
-  border-bottom: 1px solid rgba(56, 224, 151, .11);
+  border-bottom: 1px solid rgba(56, 224, 151, 0.11);
   padding: 10px 0;
   display: flex;
   justify-content: space-between;
@@ -1450,6 +1831,9 @@ a {
 
 .greenText {
   color: #4feb87;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .rightPanel {
@@ -1460,11 +1844,23 @@ a {
 
 .aiPanel,
 .securityPanel {
-  border: 1px solid rgba(58, 249, 161, .22);
+  border: 1px solid rgba(58, 249, 161, 0.22);
   background:
-    linear-gradient(145deg, rgba(5, 35, 27, .96), rgba(3, 19, 16, .98));
+    linear-gradient(
+      145deg,
+      rgba(5, 35, 27, 0.96),
+      rgba(3, 19, 16, 0.98)
+    );
   border-radius: 14px;
   padding: 16px;
+  transition: 0.3s ease;
+}
+
+.aiPanel:hover,
+.securityPanel:hover {
+  border-color: rgba(70, 255, 169, 0.45);
+  box-shadow:
+    0 0 28px rgba(37, 255, 142, 0.08);
 }
 
 .panelHeading {
@@ -1477,25 +1873,34 @@ a {
 .lightning {
   color: #efb844;
   font-size: 20px;
+  animation: lightningPulse 1.6s ease-in-out infinite;
 }
 
 .liveBadge {
   margin-left: auto;
   color: #5afa92;
   font-size: 8px;
-  border: 1px solid rgba(80, 255, 145, .22);
+  border: 1px solid rgba(80, 255, 145, 0.22);
   padding: 3px 6px;
   border-radius: 10px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  animation: livePanelGlow 2s ease-in-out infinite;
 }
 
 .aiBrain {
-  height: 80px;
+  height: 95px;
   position: relative;
   display: grid;
   place-items: center;
   margin: 10px 0;
   background:
-    radial-gradient(circle, rgba(33, 255, 158, .13), transparent 55%);
+    radial-gradient(
+      circle,
+      rgba(33, 255, 158, 0.13),
+      transparent 55%
+    );
 }
 
 .brainCore {
@@ -1507,8 +1912,30 @@ a {
   place-items: center;
   color: #5afca1;
   font-weight: 700;
-  box-shadow: 0 0 22px rgba(57, 255, 164, .2);
+  box-shadow:
+    0 0 22px rgba(57, 255, 164, 0.2);
   animation: brainPulse 2s ease-in-out infinite;
+  z-index: 3;
+}
+
+.brainOrbit {
+  position: absolute;
+  border: 1px solid rgba(76, 255, 167, 0.3);
+  border-radius: 50%;
+}
+
+.brainOrbitOne {
+  width: 85px;
+  height: 45px;
+  animation: brainOrbitSpin 6s linear infinite;
+}
+
+.brainOrbitTwo {
+  width: 70px;
+  height: 70px;
+  border-color: rgba(210, 168, 71, 0.22);
+  animation:
+    brainOrbitSpinReverse 8s linear infinite;
 }
 
 .node {
@@ -1517,14 +1944,38 @@ a {
   background: #59f99b;
   border-radius: 50%;
   position: absolute;
-  animation: nodeBlink 1.7s infinite alternate;
+  animation:
+    nodeBlink 1.7s infinite alternate;
 }
 
-.n1 { left: 22%; top: 28%; }
-.n2 { right: 22%; top: 22%; animation-delay: .2s; }
-.n3 { left: 15%; bottom: 20%; animation-delay: .5s; }
-.n4 { right: 16%; bottom: 22%; animation-delay: .8s; }
-.n5 { right: 42%; top: 4%; animation-delay: 1s; }
+.n1 {
+  left: 22%;
+  top: 28%;
+}
+
+.n2 {
+  right: 22%;
+  top: 22%;
+  animation-delay: 0.2s;
+}
+
+.n3 {
+  left: 15%;
+  bottom: 20%;
+  animation-delay: 0.5s;
+}
+
+.n4 {
+  right: 16%;
+  bottom: 22%;
+  animation-delay: 0.8s;
+}
+
+.n5 {
+  right: 42%;
+  top: 4%;
+  animation-delay: 1s;
+}
 
 .aiPanel h3 {
   margin: 8px 0 6px;
@@ -1544,15 +1995,17 @@ a {
   border-radius: 8px;
   padding: 9px;
   margin-top: 11px;
-  background: linear-gradient(90deg, #086141, #074a36);
-  border: 1px solid rgba(64, 255, 169, .23);
+  background:
+    linear-gradient(90deg, #086141, #074a36);
+  border: 1px solid rgba(64, 255, 169, 0.23);
   text-decoration: none;
   font-size: 10px;
-  transition: .25s;
+  transition: 0.25s;
 }
 
 .actionButton:hover {
-  box-shadow: 0 0 22px rgba(49, 255, 155, .16);
+  box-shadow:
+    0 0 22px rgba(49, 255, 155, 0.16);
   transform: translateY(-2px);
 }
 
@@ -1565,6 +2018,7 @@ a {
 .securityIcon {
   color: #5bf195;
   min-width: 37px;
+  animation: shieldPulse 2.8s ease-in-out infinite;
 }
 
 .securityPanel h3 {
@@ -1575,6 +2029,9 @@ a {
 .secureState {
   color: #5ee991;
   font-size: 9px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .sectionHeading {
@@ -1591,10 +2048,13 @@ a {
 
 .currentTag {
   color: #82978f;
-  border: 1px solid rgba(71, 238, 161, .13);
+  border: 1px solid rgba(71, 238, 161, 0.13);
   padding: 6px 9px;
   border-radius: 8px;
   font-size: 9px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .performanceGrid {
@@ -1604,16 +2064,17 @@ a {
 }
 
 .performanceCard {
-  border: 1px solid rgba(61, 228, 154, .16);
+  border: 1px solid rgba(61, 228, 154, 0.16);
   border-radius: 13px;
   padding: 16px;
-  background: rgba(5, 26, 21, .72);
-  transition: .25s;
+  background: rgba(5, 26, 21, 0.72);
+  transition: 0.25s;
 }
 
 .performanceCard:hover {
-  border-color: rgba(61, 255, 164, .35);
-  background: rgba(6, 35, 27, .84);
+  border-color: rgba(61, 255, 164, 0.35);
+  background: rgba(6, 35, 27, 0.84);
+  transform: translateY(-4px);
 }
 
 .performanceCard h3 {
@@ -1650,13 +2111,26 @@ a {
 .progressGold {
   height: 100%;
   border-radius: 10px;
-  background: linear-gradient(90deg, #1faa65, #59f79a);
-  box-shadow: 0 0 8px rgba(64, 255, 154, .2);
-  animation: growBar 1.3s ease-out both;
+  background:
+    linear-gradient(
+      90deg,
+      #1faa65,
+      #59f79a
+    );
+  box-shadow:
+    0 0 8px rgba(64, 255, 154, 0.2);
+  animation:
+    growBar 1.3s ease-out both,
+    progressGlow 2s ease-in-out infinite;
 }
 
 .progressGold {
-  background: linear-gradient(90deg, #8a6112, #e0b34e);
+  background:
+    linear-gradient(
+      90deg,
+      #8a6112,
+      #e0b34e
+    );
 }
 
 .moduleHeading {
@@ -1670,22 +2144,50 @@ a {
 }
 
 .moduleCard {
-  border: 1px solid rgba(64, 235, 159, .17);
+  border: 1px solid rgba(64, 235, 159, 0.17);
   background:
-    linear-gradient(145deg, rgba(5, 30, 24, .9), rgba(3, 17, 14, .96));
+    linear-gradient(
+      145deg,
+      rgba(5, 30, 24, 0.9),
+      rgba(3, 17, 14, 0.96)
+    );
   border-radius: 14px;
   padding: 15px;
   min-height: 165px;
   text-decoration: none;
-  transition: .3s ease;
+  transition: 0.3s ease;
   position: relative;
   overflow: hidden;
 }
 
+.moduleCard::before {
+  content: "";
+  position: absolute;
+  width: 50px;
+  height: 130%;
+  top: -15%;
+  left: -100px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.05),
+      transparent
+    );
+  transform: rotate(18deg);
+  transition: 0.6s ease;
+}
+
+.moduleCard:hover::before {
+  left: 120%;
+}
+
 .moduleCard:hover {
   transform: translateY(-6px);
-  border-color: rgba(74, 255, 171, .4);
-  box-shadow: 0 15px 32px rgba(0, 0, 0, .36);
+  border-color: rgba(74, 255, 171, 0.4);
+  box-shadow:
+    0 15px 32px rgba(0, 0, 0, 0.36),
+    0 0 25px rgba(36, 255, 147, 0.05);
 }
 
 .moduleOrb {
@@ -1696,19 +2198,32 @@ a {
   border-radius: 50%;
   color: #61f496;
   background:
-    radial-gradient(circle, rgba(67, 255, 157, .25), rgba(5, 42, 27, .2) 60%);
-  border-bottom: 2px solid rgba(76, 255, 153, .45);
-  box-shadow: 0 10px 18px rgba(12, 255, 131, .08);
+    radial-gradient(
+      circle,
+      rgba(67, 255, 157, 0.25),
+      rgba(5, 42, 27, 0.2) 60%
+    );
+  border-bottom:
+    2px solid rgba(76, 255, 153, 0.45);
+  box-shadow:
+    0 10px 18px rgba(12, 255, 131, 0.08);
   margin: 0 auto 12px;
-  animation: moduleFloat 4s ease-in-out infinite;
+  animation:
+    moduleFloat 4s ease-in-out infinite,
+    moduleGlow 3s ease-in-out infinite;
 }
 
 .orb4,
 .orb6 {
   color: #e0ae45;
   background:
-    radial-gradient(circle, rgba(228, 175, 66, .2), rgba(67, 48, 6, .12) 60%);
-  border-bottom-color: rgba(224, 173, 62, .5);
+    radial-gradient(
+      circle,
+      rgba(228, 175, 66, 0.2),
+      rgba(67, 48, 6, 0.12) 60%
+    );
+  border-bottom-color:
+    rgba(224, 173, 62, 0.5);
 }
 
 .moduleCard h3 {
@@ -1729,7 +2244,8 @@ a {
 }
 
 footer {
-  border-top: 1px solid rgba(55, 218, 146, .11);
+  border-top:
+    1px solid rgba(55, 218, 146, 0.11);
   margin-top: 26px;
   padding: 18px 3px;
   display: flex;
@@ -1757,8 +2273,14 @@ footer {
   display: grid;
   place-items: center;
   align-content: center;
-  gap: 15px;
-  background: #020908;
+  gap: 18px;
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(31, 255, 151, 0.08),
+      transparent 32%
+    ),
+    #020908;
   color: #7fa095;
 }
 
@@ -1768,13 +2290,48 @@ footer {
   font-size: 45px;
 }
 
+.loadingOrb {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
 .loadingRing {
+  position: absolute;
+  border-radius: 50%;
+  border:
+    1px solid rgba(69, 255, 157, 0.5);
+}
+
+.ringA {
+  width: 68px;
+  height: 38px;
+  animation: loadingOrbit 1.7s linear infinite;
+}
+
+.ringB {
   width: 55px;
   height: 55px;
-  border: 2px solid rgba(54, 255, 162, .12);
-  border-top-color: #4dec8a;
+  border-color:
+    rgba(214, 170, 71, 0.4);
+  animation:
+    loadingOrbitReverse 2.2s linear infinite;
+}
+
+.loadingCore {
+  width: 35px;
+  height: 35px;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  display: grid;
+  place-items: center;
+  border: 1px solid #4cf291;
+  color: #57f89c;
+  font-size: 11px;
+  box-shadow:
+    0 0 25px rgba(61, 255, 153, 0.22);
+  animation: brainPulse 1.5s ease-in-out infinite;
 }
 
 .loadingScreen p {
@@ -1782,47 +2339,446 @@ footer {
   letter-spacing: 1px;
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: .45; transform: scale(.85); }
-  50% { opacity: 1; transform: scale(1.2); }
+/* ===============================
+   PREMIUM ANIMATIONS
+================================ */
+
+@keyframes profileCoreGlow {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 6px rgba(82, 255, 145, 0.45),
+      0 0 14px rgba(82, 255, 145, 0.15);
+  }
+
+  50% {
+    transform: scale(1.08);
+    box-shadow:
+      0 0 14px rgba(82, 255, 145, 0.95),
+      0 0 32px rgba(82, 255, 145, 0.45);
+  }
+}
+
+@keyframes profileRadar {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.9;
+  }
+
+  70% {
+    opacity: 0.15;
+  }
+
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+@keyframes liveBlinkPremium {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.8);
+    box-shadow:
+      0 0 5px #42f587;
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.35);
+    box-shadow:
+      0 0 8px #42f587,
+      0 0 20px #42f587;
+  }
+}
+
+@keyframes livePanelGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 rgba(67, 255, 151, 0);
+  }
+
+  50% {
+    box-shadow:
+      0 0 15px rgba(67, 255, 151, 0.16),
+      inset 0 0 9px rgba(67, 255, 151, 0.05);
+  }
+}
+
+@keyframes brandBreath {
+  0%,
+  100% {
+    box-shadow:
+      0 0 12px rgba(69, 255, 142, 0.08);
+  }
+
+  50% {
+    box-shadow:
+      0 0 28px rgba(69, 255, 142, 0.2);
+  }
+}
+
+@keyframes arrowFloat {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(3px, -3px);
+  }
+}
+
+@keyframes activeNavGlow {
+  0%,
+  100% {
+    box-shadow:
+      inset 3px 0 0 #cfa43d,
+      0 0 12px rgba(24, 255, 136, 0.08);
+  }
+
+  50% {
+    box-shadow:
+      inset 3px 0 0 #cfa43d,
+      0 0 24px rgba(24, 255, 136, 0.22);
+  }
+}
+
+@keyframes partnerGlowMove {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(-25px, 20px);
+  }
+}
+
+@keyframes aiSearchPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 rgba(67, 255, 171, 0);
+  }
+
+  50% {
+    box-shadow:
+      0 0 14px rgba(67, 255, 171, 0.2);
+  }
+}
+
+@keyframes cardScan {
+  0% {
+    left: -80%;
+  }
+
+  55%,
+  100% {
+    left: 130%;
+  }
+}
+
+@keyframes iconBreath {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 6px rgba(45, 255, 140, 0.08);
+  }
+
+  50% {
+    transform: scale(1.06);
+    box-shadow:
+      0 0 18px rgba(45, 255, 140, 0.2);
+  }
 }
 
 @keyframes barGlow {
-  from { opacity: .55; }
-  to { opacity: 1; box-shadow: 0 0 7px rgba(67, 255, 154, .3); }
+  from {
+    opacity: 0.55;
+  }
+
+  to {
+    opacity: 1;
+    box-shadow:
+      0 0 7px rgba(67, 255, 154, 0.3);
+  }
+}
+
+@keyframes barMotion {
+  0% {
+    transform: scaleY(0.87);
+  }
+
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes gridMove {
+  from {
+    background-position: 0 0;
+  }
+
+  to {
+    background-position: 70px 70px;
+  }
+}
+
+@keyframes ambientMoveOne {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(80px, 25px);
+  }
+}
+
+@keyframes ambientMoveTwo {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(-80px, -20px);
+  }
 }
 
 @keyframes globeFloat {
-  0%, 100% { transform: translateY(0) rotateY(-4deg); }
-  50% { transform: translateY(-7px) rotateY(7deg); }
+  0%,
+  100% {
+    transform:
+      translateY(0)
+      rotateY(-4deg);
+  }
+
+  50% {
+    transform:
+      translateY(-8px)
+      rotateY(7deg);
+  }
+}
+
+@keyframes globeGlowPulse {
+  0%,
+  100% {
+    box-shadow:
+      inset -20px -15px 40px rgba(0, 0, 0, 0.65),
+      inset 12px 10px 30px rgba(68, 255, 182, 0.16),
+      0 0 35px rgba(23, 255, 171, 0.16);
+  }
+
+  50% {
+    box-shadow:
+      inset -20px -15px 40px rgba(0, 0, 0, 0.65),
+      inset 12px 10px 30px rgba(68, 255, 182, 0.22),
+      0 0 60px rgba(23, 255, 171, 0.32);
+  }
+}
+
+@keyframes globeRotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes globeRotateReverse {
+  from {
+    transform:
+      scaleX(0.5)
+      rotate(360deg);
+  }
+
+  to {
+    transform:
+      scaleX(0.5)
+      rotate(0deg);
+  }
 }
 
 @keyframes orbitSpin {
-  from { transform: rotate(-15deg); }
-  to { transform: rotate(345deg); }
+  from {
+    transform: rotate(-15deg);
+  }
+
+  to {
+    transform: rotate(345deg);
+  }
+}
+
+@keyframes ringPulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.95);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes particleFloat {
+  0%,
+  100% {
+    transform:
+      translateY(0)
+      scale(0.7);
+    opacity: 0.3;
+  }
+
+  50% {
+    transform:
+      translateY(-15px)
+      scale(1.4);
+    opacity: 1;
+  }
 }
 
 @keyframes brainPulse {
-  0%, 100% { transform: scale(.95); box-shadow: 0 0 12px rgba(58,255,158,.15); }
-  50% { transform: scale(1.08); box-shadow: 0 0 28px rgba(58,255,158,.35); }
+  0%,
+  100% {
+    transform: scale(0.95);
+    box-shadow:
+      0 0 12px rgba(58, 255, 158, 0.15);
+  }
+
+  50% {
+    transform: scale(1.1);
+    box-shadow:
+      0 0 30px rgba(58, 255, 158, 0.38);
+  }
+}
+
+@keyframes brainOrbitSpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes brainOrbitSpinReverse {
+  from {
+    transform: rotate(360deg);
+  }
+
+  to {
+    transform: rotate(0deg);
+  }
 }
 
 @keyframes nodeBlink {
-  from { opacity: .25; transform: scale(.7); }
-  to { opacity: 1; transform: scale(1.4); }
+  from {
+    opacity: 0.25;
+    transform: scale(0.7);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+}
+
+@keyframes lightningPulse {
+  0%,
+  100% {
+    transform: scale(0.9);
+    text-shadow:
+      0 0 4px rgba(239, 184, 68, 0.3);
+  }
+
+  50% {
+    transform: scale(1.18);
+    text-shadow:
+      0 0 14px rgba(239, 184, 68, 0.8);
+  }
+}
+
+@keyframes shieldPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter:
+      drop-shadow(
+        0 0 2px rgba(74, 255, 158, 0.2)
+      );
+  }
+
+  50% {
+    transform: scale(1.08);
+    filter:
+      drop-shadow(
+        0 0 10px rgba(74, 255, 158, 0.55)
+      );
+  }
 }
 
 @keyframes growBar {
-  from { width: 0; }
+  from {
+    width: 0;
+  }
+}
+
+@keyframes progressGlow {
+  0%,
+  100% {
+    filter: brightness(0.9);
+  }
+
+  50% {
+    filter: brightness(1.25);
+  }
 }
 
 @keyframes moduleFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
+  0%,
+  100% {
+    transform:
+      translateY(0)
+      rotate(0deg);
+  }
+
+  50% {
+    transform:
+      translateY(-7px)
+      rotate(2deg);
+  }
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+@keyframes moduleGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 10px 18px rgba(12, 255, 131, 0.08);
+  }
+
+  50% {
+    box-shadow:
+      0 12px 28px rgba(12, 255, 131, 0.2);
+  }
+}
+
+@keyframes loadingOrbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loadingOrbitReverse {
+  to {
+    transform: rotate(-360deg);
+  }
 }
 
 @media (max-width: 1200px) {
@@ -1850,12 +2806,6 @@ footer {
   .sidebar {
     width: 78px;
     padding: 20px 10px;
-  }
-
-  .brand > div:last-child,
-  .navItem span,
-  .partnerCard,
-  .logoutButton:not(svg) {
   }
 
   .brandName,
@@ -1939,6 +2889,15 @@ footer {
 
   footer {
     flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
 `;
