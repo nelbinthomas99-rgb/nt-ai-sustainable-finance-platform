@@ -17,6 +17,16 @@ export default function AdminDashboard() {
   const [userEmail, setUserEmail] = useState("");
   const [clients, setClients] = useState([]);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  const [showAddClient, setShowAddClient] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const [newClient, setNewClient] = useState({
+    client_code: "",
+    client_name: "",
+    owner_user_id: "",
+  });
 
   useEffect(() => {
     loadAdminDashboard();
@@ -26,7 +36,6 @@ export default function AdminDashboard() {
     setLoading(true);
     setError("");
 
-    // 1. Check logged-in user
     const {
       data: { user },
       error: userError,
@@ -39,7 +48,6 @@ export default function AdminDashboard() {
 
     setUserEmail(user.email || "");
 
-    // 2. Check admin permission
     const { data: adminRecord, error: adminError } = await supabase
       .from("admin_users")
       .select("role")
@@ -53,31 +61,141 @@ export default function AdminDashboard() {
       return;
     }
 
-    // Normal clients cannot enter /admin
     if (!adminRecord) {
       router.replace("/");
       return;
     }
 
-    // 3. Load all clients
-    const { data: clientData, error: clientError } = await supabase
+    await refreshClients();
+    setLoading(false);
+  }
+
+  async function refreshClients() {
+    const { data, error: clientError } = await supabase
       .from("clients")
       .select("id, client_code, client_name, owner_user_id, status, created_at")
       .order("client_code", { ascending: true });
 
     if (clientError) {
       setError(clientError.message);
-      setLoading(false);
       return;
     }
 
-    setClients(clientData || []);
-    setLoading(false);
+    setClients(data || []);
   }
 
   async function logout() {
     await supabase.auth.signOut();
     router.replace("/login");
+  }
+
+  async function addClient(e) {
+    e.preventDefault();
+
+    setError("");
+    setMessage("");
+
+    if (
+      !newClient.client_code.trim() ||
+      !newClient.client_name.trim() ||
+      !newClient.owner_user_id.trim()
+    ) {
+      setError("Please complete all client fields.");
+      return;
+    }
+
+    setSaving(true);
+
+    const { error: insertError } = await supabase
+      .from("clients")
+      .insert({
+        client_code: newClient.client_code.trim().toUpperCase(),
+        client_name: newClient.client_name.trim(),
+        owner_user_id: newClient.owner_user_id.trim(),
+        status: "active",
+      });
+
+    if (insertError) {
+      setError(insertError.message);
+      setSaving(false);
+      return;
+    }
+
+    setNewClient({
+      client_code: "",
+      client_name: "",
+      owner_user_id: "",
+    });
+
+    setShowAddClient(false);
+    setMessage("Client created successfully.");
+
+    await refreshClients();
+
+    setSaving(false);
+  }
+
+  async function editClientName(client) {
+    const updatedName = window.prompt(
+      "Enter the new client name:",
+      client.client_name
+    );
+
+    if (!updatedName || updatedName.trim() === "") {
+      return;
+    }
+
+    setError("");
+    setMessage("");
+
+    const { error: updateError } = await supabase
+      .from("clients")
+      .update({
+        client_name: updatedName.trim(),
+      })
+      .eq("id", client.id);
+
+    if (updateError) {
+      setError(updateError.message);
+      return;
+    }
+
+    setMessage(`${client.client_code} name updated.`);
+    await refreshClients();
+  }
+
+  async function toggleClientStatus(client) {
+    const nextStatus =
+      client.status === "active" ? "inactive" : "active";
+
+    const confirmed = window.confirm(
+      `Change ${client.client_code} to ${nextStatus}?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
+
+    const { error: updateError } = await supabase
+      .from("clients")
+      .update({
+        status: nextStatus,
+      })
+      .eq("id", client.id);
+
+    if (updateError) {
+      setError(updateError.message);
+      return;
+    }
+
+    setMessage(
+      `${client.client_code} is now ${nextStatus}.`
+    );
+
+    await refreshClients();
   }
 
   const activeClients = clients.filter(
@@ -91,16 +209,24 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <main style={styles.loadingPage}>
+        <style>{animationStyles}</style>
+
         <div style={styles.loader}></div>
-        <h2 style={{ marginTop: 20 }}>Loading N&T Admin Intelligence...</h2>
-        <p style={styles.muted}>Verifying administrator access</p>
+
+        <h2 style={{ marginTop: 20 }}>
+          Loading N&T Admin Intelligence...
+        </h2>
+
+        <p style={styles.muted}>
+          Verifying administrator access
+        </p>
       </main>
     );
   }
 
   return (
     <main style={styles.page}>
-      {/* SIDEBAR */}
+      <style>{animationStyles}</style>
 
       <aside style={styles.sidebar}>
         <div>
@@ -109,7 +235,10 @@ export default function AdminDashboard() {
 
             <div>
               <div style={styles.brand}>N&T</div>
-              <div style={styles.brandSub}>ADMIN INTELLIGENCE</div>
+
+              <div style={styles.brandSub}>
+                ADMIN INTELLIGENCE
+              </div>
             </div>
           </div>
 
@@ -134,12 +263,18 @@ export default function AdminDashboard() {
               ESG
             </Link>
 
-            <Link href="/carbon-energy" style={styles.menuLink}>
+            <Link
+              href="/carbon-energy"
+              style={styles.menuLink}
+            >
               <span>○</span>
               Carbon & Energy
             </Link>
 
-            <Link href="/sustainable-finance" style={styles.menuLink}>
+            <Link
+              href="/sustainable-finance"
+              style={styles.menuLink}
+            >
               <span>♧</span>
               Sustainable Finance
             </Link>
@@ -153,35 +288,46 @@ export default function AdminDashboard() {
 
         <div>
           <div style={styles.securityBox}>
-            <div style={styles.securityTitle}>ADMIN SESSION</div>
+            <div style={styles.securityTitle}>
+              ADMIN SESSION
+            </div>
+
             <div style={styles.securityLive}>
               <span style={styles.greenDot}></span>
               Secure
             </div>
+
             <div style={styles.securityText}>
               Administrator permissions verified
             </div>
           </div>
 
-          <button onClick={logout} style={styles.logoutButton}>
+          <button
+            onClick={logout}
+            style={styles.logoutButton}
+          >
             Logout
           </button>
         </div>
       </aside>
 
-      {/* MAIN AREA */}
-
       <section style={styles.content}>
         <header style={styles.header}>
           <div>
-            <div style={styles.smallLabel}>N&T CONTROL CENTRE</div>
+            <div style={styles.smallLabel}>
+              N&T CONTROL CENTRE
+            </div>
 
             <h1 style={styles.title}>
-              Admin <span style={styles.green}>Intelligence</span>
+              Admin{" "}
+              <span style={styles.green}>
+                Intelligence
+              </span>
             </h1>
 
             <p style={styles.subtitle}>
-              Multi-client management and platform monitoring.
+              Multi-client management and platform
+              monitoring.
             </p>
           </div>
 
@@ -189,15 +335,28 @@ export default function AdminDashboard() {
             <div style={styles.adminCircle}>A</div>
 
             <div>
-              <div style={styles.adminText}>Administrator</div>
-              <div style={styles.email}>{userEmail}</div>
+              <div style={styles.adminText}>
+                Administrator
+              </div>
+
+              <div style={styles.email}>
+                {userEmail}
+              </div>
             </div>
           </div>
         </header>
 
-        {error && <div style={styles.error}>{error}</div>}
+        {error && (
+          <div style={styles.error}>
+            {error}
+          </div>
+        )}
 
-        {/* KPI CARDS */}
+        {message && (
+          <div style={styles.success}>
+            {message}
+          </div>
+        )}
 
         <section style={styles.kpiGrid}>
           <div style={styles.card}>
@@ -206,18 +365,12 @@ export default function AdminDashboard() {
               Total Clients
             </div>
 
-            <div style={styles.bigNumber}>{clients.length}</div>
+            <div style={styles.bigNumber}>
+              {clients.length}
+            </div>
 
             <div style={styles.cardText}>
               Registered client organisations
-            </div>
-
-            <div style={styles.miniBars}>
-              <span style={{ ...styles.bar, height: 14 }}></span>
-              <span style={{ ...styles.bar, height: 21 }}></span>
-              <span style={{ ...styles.bar, height: 27 }}></span>
-              <span style={{ ...styles.bar, height: 34 }}></span>
-              <span style={{ ...styles.bar, height: 42 }}></span>
             </div>
           </div>
 
@@ -227,22 +380,12 @@ export default function AdminDashboard() {
               Active Clients
             </div>
 
-            <div style={styles.bigNumber}>{activeClients}</div>
+            <div style={styles.bigNumber}>
+              {activeClients}
+            </div>
 
             <div style={styles.cardText}>
               Currently active client accounts
-            </div>
-
-            <div style={styles.progress}>
-              <div
-                style={{
-                  ...styles.progressFill,
-                  width:
-                    clients.length > 0
-                      ? `${(activeClients / clients.length) * 100}%`
-                      : "0%",
-                }}
-              ></div>
             </div>
           </div>
 
@@ -252,13 +395,13 @@ export default function AdminDashboard() {
               Inactive Clients
             </div>
 
-            <div style={styles.bigNumber}>{inactiveClients}</div>
+            <div style={styles.bigNumber}>
+              {inactiveClients}
+            </div>
 
             <div style={styles.cardText}>
               Accounts requiring attention
             </div>
-
-            <div style={styles.goldLine}></div>
           </div>
 
           <div style={styles.card}>
@@ -267,7 +410,9 @@ export default function AdminDashboard() {
               Platform Status
             </div>
 
-            <div style={styles.liveStatus}>LIVE</div>
+            <div style={styles.liveStatus}>
+              LIVE
+            </div>
 
             <div style={styles.cardText}>
               Supabase client database connected
@@ -280,21 +425,123 @@ export default function AdminDashboard() {
           </div>
         </section>
 
-        {/* CLIENT MANAGEMENT */}
-
         <section style={styles.panel}>
           <div style={styles.panelHeader}>
             <div>
-              <div style={styles.smallLabel}>CLIENT MANAGEMENT</div>
+              <div style={styles.smallLabel}>
+                CLIENT MANAGEMENT
+              </div>
 
-              <h2 style={styles.panelTitle}>Client Portfolio</h2>
+              <h2 style={styles.panelTitle}>
+                Client Portfolio
+              </h2>
             </div>
 
-            <div style={styles.liveBadge}>
-              <span style={styles.greenDot}></span>
-              LIVE DATA
+            <div style={styles.actionsRow}>
+              <div style={styles.liveBadge}>
+                <span style={styles.greenDot}></span>
+                LIVE DATA
+              </div>
+
+              <button
+                style={styles.addButton}
+                onClick={() =>
+                  setShowAddClient((value) => !value)
+                }
+              >
+                + Add Client
+              </button>
             </div>
           </div>
+
+          {showAddClient && (
+            <form
+              onSubmit={addClient}
+              style={styles.addForm}
+            >
+              <div style={styles.formHeader}>
+                Add New Client
+              </div>
+
+              <div style={styles.formGrid}>
+                <div>
+                  <label style={styles.label}>
+                    Client Code
+                  </label>
+
+                  <input
+                    value={newClient.client_code}
+                    onChange={(e) =>
+                      setNewClient({
+                        ...newClient,
+                        client_code: e.target.value,
+                      })
+                    }
+                    placeholder="NT-003"
+                    style={styles.input}
+                  />
+                </div>
+
+                <div>
+                  <label style={styles.label}>
+                    Client Name
+                  </label>
+
+                  <input
+                    value={newClient.client_name}
+                    onChange={(e) =>
+                      setNewClient({
+                        ...newClient,
+                        client_name: e.target.value,
+                      })
+                    }
+                    placeholder="Example Ltd"
+                    style={styles.input}
+                  />
+                </div>
+
+                <div>
+                  <label style={styles.label}>
+                    Supabase User UID
+                  </label>
+
+                  <input
+                    value={newClient.owner_user_id}
+                    onChange={(e) =>
+                      setNewClient({
+                        ...newClient,
+                        owner_user_id: e.target.value,
+                      })
+                    }
+                    placeholder="Paste user UID"
+                    style={styles.input}
+                  />
+                </div>
+              </div>
+
+              <div style={styles.formButtons}>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  style={styles.saveButton}
+                >
+                  {saving
+                    ? "Creating..."
+                    : "Create Client"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowAddClient(false)
+                  }
+                  style={styles.cancelButton}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
 
           {clients.length === 0 ? (
             <div style={styles.emptyState}>
@@ -303,10 +550,15 @@ export default function AdminDashboard() {
           ) : (
             <div style={styles.clientGrid}>
               {clients.map((client) => (
-                <article key={client.id} style={styles.clientCard}>
+                <article
+                  key={client.id}
+                  style={styles.clientCard}
+                >
                   <div style={styles.clientTop}>
                     <div style={styles.clientAvatar}>
-                      {client.client_code?.replace("NT-", "") || "NT"}
+                      {client.client_code
+                        ?.replace("NT-", "")
+                        .slice(0, 3) || "NT"}
                     </div>
 
                     <div
@@ -316,7 +568,6 @@ export default function AdminDashboard() {
                           : styles.inactiveBadge
                       }
                     >
-                      <span style={styles.greenDot}></span>
                       {client.status || "unknown"}
                     </div>
                   </div>
@@ -332,23 +583,69 @@ export default function AdminDashboard() {
                   <div style={styles.divider}></div>
 
                   <div style={styles.clientDetail}>
-                    <span style={styles.detailLabel}>Client ID</span>
-                    <strong>{client.client_code}</strong>
+                    <span style={styles.detailLabel}>
+                      Client ID
+                    </span>
+
+                    <strong>
+                      {client.client_code}
+                    </strong>
                   </div>
 
                   <div style={styles.clientDetail}>
-                    <span style={styles.detailLabel}>Status</span>
-                    <strong>{client.status}</strong>
+                    <span style={styles.detailLabel}>
+                      Status
+                    </span>
+
+                    <strong>
+                      {client.status}
+                    </strong>
                   </div>
 
                   <div style={styles.clientDetail}>
-                    <span style={styles.detailLabel}>Data Isolation</span>
-                    <strong style={styles.green}>Enabled</strong>
+                    <span style={styles.detailLabel}>
+                      Data Isolation
+                    </span>
+
+                    <strong style={styles.green}>
+                      Enabled
+                    </strong>
                   </div>
 
                   <div style={styles.clientDetail}>
-                    <span style={styles.detailLabel}>Owner Linked</span>
-                    <strong style={styles.green}>Yes</strong>
+                    <span style={styles.detailLabel}>
+                      Owner Linked
+                    </span>
+
+                    <strong style={styles.green}>
+                      Yes
+                    </strong>
+                  </div>
+
+                  <div style={styles.clientActions}>
+                    <button
+                      onClick={() =>
+                        editClientName(client)
+                      }
+                      style={styles.editButton}
+                    >
+                      Edit Name
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        toggleClientStatus(client)
+                      }
+                      style={
+                        client.status === "active"
+                          ? styles.deactivateButton
+                          : styles.activateButton
+                      }
+                    >
+                      {client.status === "active"
+                        ? "Deactivate"
+                        : "Activate"}
+                    </button>
                   </div>
                 </article>
               ))}
@@ -356,65 +653,93 @@ export default function AdminDashboard() {
           )}
         </section>
 
-        {/* PLATFORM ARCHITECTURE */}
-
         <section style={styles.bottomGrid}>
           <div style={styles.bottomPanel}>
-            <div style={styles.smallLabel}>PLATFORM ARCHITECTURE</div>
+            <div style={styles.smallLabel}>
+              ADMIN CAPABILITIES
+            </div>
 
-            <h2 style={styles.panelTitle}>Multi-Client Engine</h2>
+            <h2 style={styles.panelTitle}>
+              Client Management Engine
+            </h2>
 
-            <div style={styles.architecture}>
-              <div style={styles.archBox}>
-                <span style={styles.archIcon}>NT</span>
-                <strong>N&T Admin</strong>
-              </div>
+            <div style={styles.securityRow}>
+              <span>Create clients</span>
 
-              <div style={styles.arrow}>→</div>
+              <strong style={styles.green}>
+                ENABLED
+              </strong>
+            </div>
 
-              <div style={styles.archBox}>
-                <span style={styles.archIcon}>AI</span>
-                <strong>Platform</strong>
-              </div>
+            <div style={styles.securityRow}>
+              <span>Edit client name</span>
 
-              <div style={styles.arrow}>→</div>
+              <strong style={styles.green}>
+                ENABLED
+              </strong>
+            </div>
 
-              <div style={styles.archBox}>
-                <span style={styles.archIcon}>{clients.length}</span>
-                <strong>Clients</strong>
-              </div>
+            <div style={styles.securityRow}>
+              <span>Activate / deactivate</span>
+
+              <strong style={styles.green}>
+                ENABLED
+              </strong>
+            </div>
+
+            <div style={styles.securityRow}>
+              <span>Client data isolation</span>
+
+              <strong style={styles.green}>
+                ACTIVE
+              </strong>
             </div>
           </div>
 
           <div style={styles.bottomPanel}>
-            <div style={styles.smallLabel}>SECURITY</div>
+            <div style={styles.smallLabel}>
+              SECURITY
+            </div>
 
-            <h2 style={styles.panelTitle}>Access Control</h2>
+            <h2 style={styles.panelTitle}>
+              Access Control
+            </h2>
 
             <div style={styles.securityRow}>
-              <span>Administrator verification</span>
-              <strong style={styles.green}>ACTIVE</strong>
+              <span>
+                Administrator verification
+              </span>
+
+              <strong style={styles.green}>
+                ACTIVE
+              </strong>
             </div>
 
             <div style={styles.securityRow}>
-              <span>Row Level Security</span>
-              <strong style={styles.green}>ENABLED</strong>
+              <span>
+                Row Level Security
+              </span>
+
+              <strong style={styles.green}>
+                ENABLED
+              </strong>
             </div>
 
             <div style={styles.securityRow}>
-              <span>Client isolation architecture</span>
-              <strong style={styles.green}>ACTIVE</strong>
-            </div>
+              <span>
+                Authenticated session
+              </span>
 
-            <div style={styles.securityRow}>
-              <span>Authenticated session</span>
-              <strong style={styles.green}>SECURE</strong>
+              <strong style={styles.green}>
+                SECURE
+              </strong>
             </div>
           </div>
         </section>
 
         <footer style={styles.footer}>
-          N&T AI-Powered Sustainable Finance & Accounting Ltd
+          N&T AI-Powered Sustainable Finance &
+          Accounting Ltd
           <span style={styles.footerDot}>•</span>
           Admin Intelligence Platform
         </footer>
@@ -422,6 +747,14 @@ export default function AdminDashboard() {
     </main>
   );
 }
+
+const animationStyles = `
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+`;
 
 const styles = {
   page: {
@@ -485,7 +818,6 @@ const styles = {
     justifyContent: "center",
     color: "#d7ae58",
     fontWeight: 800,
-    boxShadow: "0 0 20px rgba(215,174,88,.12)",
   },
 
   brand: {
@@ -623,7 +955,6 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     color: "#d7ae58",
-    boxShadow: "0 0 18px rgba(66,245,135,.22)",
   },
 
   adminText: {
@@ -644,9 +975,19 @@ const styles = {
     marginBottom: 20,
   },
 
+  success: {
+    padding: 15,
+    border: "1px solid rgba(66,245,135,.45)",
+    borderRadius: 10,
+    color: "#71f7aa",
+    background: "rgba(66,245,135,.08)",
+    marginBottom: 20,
+  },
+
   kpiGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(210px, 1fr))",
     gap: 16,
     marginBottom: 20,
   },
@@ -655,10 +996,9 @@ const styles = {
     border: "1px solid rgba(66,245,135,.18)",
     borderRadius: 16,
     padding: 20,
-    minHeight: 165,
+    minHeight: 145,
     background:
       "linear-gradient(145deg, rgba(0,48,37,.92), rgba(0,25,20,.92))",
-    boxShadow: "0 15px 35px rgba(0,0,0,.18)",
   },
 
   cardTop: {
@@ -692,43 +1032,6 @@ const styles = {
     color: "#6f8c80",
     fontSize: 11,
     marginTop: 6,
-  },
-
-  miniBars: {
-    display: "flex",
-    gap: 5,
-    alignItems: "end",
-    height: 45,
-    marginTop: 12,
-  },
-
-  bar: {
-    width: 16,
-    background: "linear-gradient(#42f587,#0b5d4b)",
-    borderRadius: 2,
-    boxShadow: "0 0 8px rgba(66,245,135,.3)",
-  },
-
-  progress: {
-    width: "100%",
-    height: 6,
-    background: "rgba(255,255,255,.07)",
-    borderRadius: 10,
-    marginTop: 28,
-    overflow: "hidden",
-  },
-
-  progressFill: {
-    height: "100%",
-    background: "#42f587",
-    borderRadius: 10,
-  },
-
-  goldLine: {
-    height: 2,
-    marginTop: 31,
-    background:
-      "linear-gradient(90deg,#d7ae58,rgba(215,174,88,.05))",
   },
 
   liveStatus: {
@@ -779,6 +1082,13 @@ const styles = {
     fontSize: 23,
   },
 
+  actionsRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+
   liveBadge: {
     border: "1px solid rgba(66,245,135,.3)",
     borderRadius: 30,
@@ -790,9 +1100,83 @@ const styles = {
     gap: 8,
   },
 
+  addButton: {
+    padding: "10px 14px",
+    borderRadius: 10,
+    border: "1px solid #42f587",
+    background: "#087a4f",
+    color: "white",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+
+  addForm: {
+    padding: 18,
+    borderRadius: 14,
+    border: "1px solid rgba(66,245,135,.25)",
+    background: "rgba(0,20,16,.75)",
+    marginBottom: 20,
+  },
+
+  formHeader: {
+    fontSize: 18,
+    fontWeight: 700,
+    marginBottom: 15,
+  },
+
+  formGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(220px,1fr))",
+    gap: 15,
+  },
+
+  label: {
+    display: "block",
+    fontSize: 11,
+    color: "#91aaa0",
+    marginBottom: 7,
+  },
+
+  input: {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "11px 12px",
+    borderRadius: 9,
+    border: "1px solid rgba(66,245,135,.2)",
+    background: "#001b15",
+    color: "white",
+    outline: "none",
+  },
+
+  formButtons: {
+    display: "flex",
+    gap: 10,
+    marginTop: 16,
+  },
+
+  saveButton: {
+    padding: "10px 14px",
+    borderRadius: 9,
+    border: "1px solid #42f587",
+    background: "#087a4f",
+    color: "white",
+    cursor: "pointer",
+  },
+
+  cancelButton: {
+    padding: "10px 14px",
+    borderRadius: 9,
+    border: "1px solid rgba(255,255,255,.15)",
+    background: "transparent",
+    color: "white",
+    cursor: "pointer",
+  },
+
   clientGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(260px,1fr))",
     gap: 15,
   },
 
@@ -871,6 +1255,42 @@ const styles = {
     color: "#718b80",
   },
 
+  clientActions: {
+    display: "flex",
+    gap: 10,
+    marginTop: 16,
+  },
+
+  editButton: {
+    flex: 1,
+    padding: "9px 10px",
+    borderRadius: 8,
+    border: "1px solid rgba(66,245,135,.35)",
+    background: "rgba(66,245,135,.08)",
+    color: "#8cf7b7",
+    cursor: "pointer",
+  },
+
+  deactivateButton: {
+    flex: 1,
+    padding: "9px 10px",
+    borderRadius: 8,
+    border: "1px solid rgba(215,174,88,.4)",
+    background: "rgba(215,174,88,.08)",
+    color: "#e3bd6b",
+    cursor: "pointer",
+  },
+
+  activateButton: {
+    flex: 1,
+    padding: "9px 10px",
+    borderRadius: 8,
+    border: "1px solid rgba(66,245,135,.4)",
+    background: "rgba(66,245,135,.08)",
+    color: "#8cf7b7",
+    cursor: "pointer",
+  },
+
   emptyState: {
     padding: 30,
     textAlign: "center",
@@ -879,7 +1299,8 @@ const styles = {
 
   bottomGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(300px,1fr))",
     gap: 20,
   },
 
@@ -888,38 +1309,6 @@ const styles = {
     borderRadius: 18,
     padding: 23,
     background: "rgba(0,32,25,.8)",
-  },
-
-  architecture: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-    marginTop: 25,
-  },
-
-  archBox: {
-    flex: 1,
-    minHeight: 85,
-    border: "1px solid rgba(66,245,135,.18)",
-    borderRadius: 12,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    fontSize: 11,
-    textAlign: "center",
-  },
-
-  archIcon: {
-    color: "#42f587",
-    fontWeight: 800,
-    fontSize: 18,
-  },
-
-  arrow: {
-    color: "#d7ae58",
   },
 
   securityRow: {
