@@ -109,7 +109,10 @@ function MiniBars({ values }) {
 }
 
 function ProgressBar({ value, max = 100, gold = false }) {
-  const width = Math.min(Math.max((Number(value) / max) * 100, 0), 100);
+  const width = Math.min(
+    Math.max((Number(value) / Number(max || 1)) * 100, 0),
+    100
+  );
 
   return (
     <div className="progressTrack">
@@ -126,8 +129,11 @@ export default function Home() {
 
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
+
+  const [clientDbId, setClientDbId] = useState("");
   const [clientId, setClientId] = useState("");
   const [clientName, setClientName] = useState("");
+  const [clientStatus, setClientStatus] = useState("");
 
   const [summary, setSummary] = useState({
     revenue: 0,
@@ -152,141 +158,225 @@ export default function Home() {
     let mounted = true;
 
     async function loadDashboard() {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
 
-      if (userError || !user) {
-        router.replace("/login");
-        return;
+        if (userError || !user) {
+          router.replace("/login");
+          return;
+        }
+
+        if (!mounted) return;
+
+        setEmail(user.email || "");
+
+        // ==========================================
+        // PHASE 2 - MULTI CLIENT ARCHITECTURE
+        // Find the client owned by this signed-in user
+        // ==========================================
+
+        const { data: clientRecord, error: clientError } =
+          await supabase
+            .from("clients")
+            .select(
+              "id, client_code, client_name, owner_user_id, status, created_at"
+            )
+            .eq("owner_user_id", user.id)
+            .eq("status", "active")
+            .order("created_at", { ascending: true })
+            .limit(1)
+            .maybeSingle();
+
+        if (!mounted) return;
+
+        if (clientError) {
+          console.error("Client loading error:", clientError);
+        }
+
+        if (!clientRecord) {
+          console.error("No active client record for this user.");
+          setClientId("NO-CLIENT");
+          setClientName("Client profile not configured");
+          setClientStatus("inactive");
+          setLoading(false);
+          return;
+        }
+
+        const activeClientDbId = clientRecord.id;
+
+        setClientDbId(activeClientDbId);
+        setClientId(clientRecord.client_code || "");
+        setClientName(clientRecord.client_name || "");
+        setClientStatus(clientRecord.status || "");
+
+        // ==========================================
+        // LOAD DATA ONLY FOR ACTIVE CLIENT
+        // ==========================================
+
+        const [financial, esg, carbon, sustainable] =
+          await Promise.all([
+            supabase
+              .from("financial_data")
+              .select("*")
+              .eq("client_id", activeClientDbId)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle(),
+
+            supabase
+              .from("esg_data")
+              .select("*")
+              .eq("client_id", activeClientDbId)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle(),
+
+            supabase
+              .from("carbon_energy_data")
+              .select("*")
+              .eq("client_id", activeClientDbId)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle(),
+
+            supabase
+              .from("sustainable_finance_data")
+              .select("*")
+              .eq("client_id", activeClientDbId)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle(),
+          ]);
+
+        if (!mounted) return;
+
+        if (financial.error) {
+          console.error("Financial loading error:", financial.error);
+        }
+
+        if (esg.error) {
+          console.error("ESG loading error:", esg.error);
+        }
+
+        if (carbon.error) {
+          console.error("Carbon loading error:", carbon.error);
+        }
+
+        if (sustainable.error) {
+          console.error(
+            "Sustainable finance loading error:",
+            sustainable.error
+          );
+        }
+
+        const revenue = Number(financial.data?.revenue || 0);
+        const expenses = Number(financial.data?.expenses || 0);
+        const profit = revenue - expenses;
+
+        const environmental = Number(
+          esg.data?.environmental_score ??
+            esg.data?.environmental ??
+            0
+        );
+
+        const social = Number(
+          esg.data?.social_score ??
+            esg.data?.social ??
+            0
+        );
+
+        const governance = Number(
+          esg.data?.governance_score ??
+            esg.data?.governance ??
+            0
+        );
+
+        const esgScore =
+          environmental || social || governance
+            ? (environmental + social + governance) / 3
+            : 0;
+
+        const electricity = Number(
+          carbon.data?.electricity_kwh || 0
+        );
+
+        const gas = Number(carbon.data?.gas_kwh || 0);
+
+        const travel = Number(
+          carbon.data?.travel_km || 0
+        );
+
+        const carbonTotal = Number(
+          carbon.data?.carbon_emissions_kg || 0
+        );
+
+        const greenInvestment = Number(
+          sustainable.data?.green_investment || 0
+        );
+
+        const sustainableLoans = Number(
+          sustainable.data?.sustainable_loans || 0
+        );
+
+        const esgFunds = Number(
+          sustainable.data?.esg_funds || 0
+        );
+
+        const totalFinance = Number(
+          sustainable.data?.total_finance || 0
+        );
+
+        const sustainableTotal =
+          greenInvestment + sustainableLoans + esgFunds;
+
+        const sustainablePercentage =
+          totalFinance > 0
+            ? (sustainableTotal / totalFinance) * 100
+            : 0;
+
+        setSummary({
+          revenue,
+          expenses,
+          profit,
+          environmental,
+          social,
+          governance,
+          esgScore,
+          electricity,
+          gas,
+          travel,
+          carbon: carbonTotal,
+          greenInvestment,
+          sustainableLoans,
+          esgFunds,
+          totalFinance,
+          sustainablePercentage,
+        });
+
+        setLoading(false);
+      } catch (error) {
+        console.error("Dashboard error:", error);
+
+        if (mounted) {
+          setLoading(false);
+        }
       }
-
-      if (!mounted) return;
-
-      setEmail(user.email || "");
-
-      const { data: profile } = await supabase
-        .from("client_profiles")
-        .select("client_id, client_name")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!mounted) return;
-
-      if (profile) {
-        setClientId(profile.client_id || "");
-        setClientName(profile.client_name || "");
-      }
-
-      const [financial, esg, carbon, sustainable] = await Promise.all([
-        supabase
-          .from("financial_data")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-
-        supabase
-          .from("esg_data")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-
-        supabase
-          .from("carbon_energy_data")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-
-        supabase
-          .from("sustainable_finance_data")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-      ]);
-
-      const revenue = Number(financial.data?.revenue || 0);
-      const expenses = Number(financial.data?.expenses || 0);
-      const profit = revenue - expenses;
-
-      const environmental = Number(
-        esg.data?.environmental_score ?? esg.data?.environmental ?? 0
-      );
-
-      const social = Number(esg.data?.social_score ?? esg.data?.social ?? 0);
-
-      const governance = Number(
-        esg.data?.governance_score ?? esg.data?.governance ?? 0
-      );
-
-      const esgScore =
-        environmental || social || governance
-          ? (environmental + social + governance) / 3
-          : 0;
-
-      const electricity = Number(carbon.data?.electricity_kwh || 0);
-      const gas = Number(carbon.data?.gas_kwh || 0);
-      const travel = Number(carbon.data?.travel_km || 0);
-      const carbonTotal = Number(carbon.data?.carbon_emissions_kg || 0);
-
-      const greenInvestment = Number(
-        sustainable.data?.green_investment || 0
-      );
-
-      const sustainableLoans = Number(
-        sustainable.data?.sustainable_loans || 0
-      );
-
-      const esgFunds = Number(sustainable.data?.esg_funds || 0);
-      const totalFinance = Number(sustainable.data?.total_finance || 0);
-
-      const sustainableTotal =
-        greenInvestment + sustainableLoans + esgFunds;
-
-      const sustainablePercentage =
-        totalFinance > 0 ? (sustainableTotal / totalFinance) * 100 : 0;
-
-      if (!mounted) return;
-
-      setSummary({
-        revenue,
-        expenses,
-        profit,
-        environmental,
-        social,
-        governance,
-        esgScore,
-        electricity,
-        gas,
-        travel,
-        carbon: carbonTotal,
-        greenInvestment,
-        sustainableLoans,
-        esgFunds,
-        totalFinance,
-        sustainablePercentage,
-      });
-
-      setLoading(false);
     }
 
     loadDashboard();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        router.replace("/login");
+    } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (!session) {
+          router.replace("/login");
+        }
       }
-    });
+    );
 
     return () => {
       mounted = false;
@@ -312,7 +402,7 @@ export default function Home() {
           <div className="loadingCore">AI</div>
         </div>
 
-        <p>Loading secure intelligence platform...</p>
+        <p>Loading secure client intelligence...</p>
       </main>
     );
   }
@@ -328,15 +418,29 @@ export default function Home() {
     ["financial", "Financial Overview", "/financial"],
     ["esg", "ESG Performance", "/esg"],
     ["carbon", "Carbon & Energy", "/carbon-energy"],
-    ["sustainable", "Sustainable Finance", "/sustainable-finance"],
+    [
+      "sustainable",
+      "Sustainable Finance",
+      "/sustainable-finance",
+    ],
     ["ai", "AI Insights", "/ai-insights"],
     ["documents", "Documents", "/documents"],
     ["architecture", "Architecture", "/architecture"],
   ];
 
   const modules = [
-    ["financial", "Financial", "Accounting & Financial Data", "/financial"],
-    ["esg", "ESG", "Environmental, Social & Governance", "/esg"],
+    [
+      "financial",
+      "Financial",
+      "Accounting & Financial Data",
+      "/financial",
+    ],
+    [
+      "esg",
+      "ESG",
+      "Environmental, Social & Governance",
+      "/esg",
+    ],
     [
       "carbon",
       "Carbon & Energy",
@@ -349,7 +453,12 @@ export default function Home() {
       "Investments & Finance Metrics",
       "/sustainable-finance",
     ],
-    ["ai", "AI Insights", "Automated Business Insights", "/ai-insights"],
+    [
+      "ai",
+      "AI Insights",
+      "Automated Business Insights",
+      "/ai-insights",
+    ],
     [
       "documents",
       "Documents",
@@ -361,7 +470,9 @@ export default function Home() {
   const aiMessage =
     summary.esgScore >= 75
       ? "Your current ESG performance is strong. Continue monitoring environmental, social and governance indicators."
-      : "Your ESG dashboard has opportunities for improvement. Review individual ESG indicators for the next actions.";
+      : summary.esgScore > 0
+        ? "Your ESG dashboard has opportunities for improvement. Review the individual indicators for the next actions."
+        : "No ESG data has been recorded for this client yet.";
 
   return (
     <main className="appShell">
@@ -386,22 +497,28 @@ export default function Home() {
         </div>
 
         <nav className="nav">
-          {navItems.map(([icon, label, href], index) => (
-            <Link
-              key={label}
-              href={href}
-              className={`navItem ${index === 0 ? "navActive" : ""}`}
-            >
-              <Icon type={icon} />
-              <span>{label}</span>
-            </Link>
-          ))}
+          {navItems.map(
+            ([icon, label, href], index) => (
+              <Link
+                key={label}
+                href={href}
+                className={`navItem ${
+                  index === 0 ? "navActive" : ""
+                }`}
+              >
+                <Icon type={icon} />
+                <span>{label}</span>
+              </Link>
+            )
+          )}
         </nav>
 
         <div className="partnerCard">
           <div className="partnerGlow" />
 
-          <div className="partnerTitle">N&T Client Portal</div>
+          <div className="partnerTitle">
+            N&T Client Portal
+          </div>
 
           <div className="partnerText">
             Secure. Sustainable. Intelligent.
@@ -413,7 +530,10 @@ export default function Home() {
           </div>
         </div>
 
-        <button onClick={handleLogout} className="logoutButton">
+        <button
+          onClick={handleLogout}
+          className="logoutButton"
+        >
           <Icon type="logout" />
           Logout
         </button>
@@ -438,7 +558,10 @@ export default function Home() {
             </div>
 
             <div>
-              <strong>N&T Client</strong>
+              <strong>
+                {clientId || "N&T Client"}
+              </strong>
+
               <small>{email}</small>
             </div>
           </div>
@@ -448,22 +571,29 @@ export default function Home() {
           <div className="welcomeRow">
             <div>
               <h1>
-                Welcome to <span>N&T Intelligence</span>
+                Welcome to{" "}
+                <span>N&T Intelligence</span>
               </h1>
 
               <p>
-                Your financial and sustainability performance in one secure
-                intelligent platform.
+                Your financial and sustainability
+                performance in one secure intelligent
+                platform.
               </p>
 
               {clientName && (
-                <div className="clientPill">{clientName}</div>
+                <div className="clientPill">
+                  <span className="tinyPulse" />
+                  {clientId} · {clientName}
+                </div>
               )}
             </div>
 
             <div className="statusPill">
               <span className="pulseDot" />
-              LIVE DATA CONNECTED
+              {clientStatus === "active"
+                ? "LIVE CLIENT CONNECTED"
+                : "CLIENT STATUS CHECK"}
             </div>
           </div>
 
@@ -481,9 +611,13 @@ export default function Home() {
 
               <h2>{money(summary.revenue)}</h2>
 
-              <p>Current financial snapshot</p>
+              <p>Current client financial snapshot</p>
 
-              <MiniBars values={[25, 37, 30, 48, 42, 62, 55, 74]} />
+              <MiniBars
+                values={[
+                  25, 37, 30, 48, 42, 62, 55, 74,
+                ]}
+              />
             </div>
 
             <div className="kpiCard goldCard">
@@ -501,7 +635,11 @@ export default function Home() {
 
               <p>Revenue less expenses</p>
 
-              <MiniBars values={[20, 28, 25, 35, 32, 44, 39, 55]} />
+              <MiniBars
+                values={[
+                  20, 28, 25, 35, 32, 44, 39, 55,
+                ]}
+              />
             </div>
 
             <div className="kpiCard">
@@ -522,7 +660,11 @@ export default function Home() {
 
               <p>Current ESG performance</p>
 
-              <MiniBars values={[35, 45, 50, 48, 60, 68, 72, 80]} />
+              <MiniBars
+                values={[
+                  35, 45, 50, 48, 60, 68, 72, 80,
+                ]}
+              />
             </div>
 
             <div className="kpiCard goldCard">
@@ -543,7 +685,11 @@ export default function Home() {
 
               <p>Latest calculated footprint</p>
 
-              <MiniBars values={[75, 68, 62, 58, 54, 48, 45, 40]} />
+              <MiniBars
+                values={[
+                  75, 68, 62, 58, 54, 48, 45, 40,
+                ]}
+              />
             </div>
           </section>
 
@@ -564,14 +710,15 @@ export default function Home() {
                 </h2>
 
                 <p>
-                  Financial, ESG, carbon and sustainable finance
-                  information combined into one secure reporting
-                  experience.
+                  Financial, ESG, carbon and
+                  sustainable finance information
+                  combined into one secure
+                  client-specific reporting experience.
                 </p>
 
                 <div className="syncState">
                   <span className="pulseDot" />
-                  Supabase data synchronised
+                  Client data synchronised
                 </div>
               </div>
 
@@ -610,6 +757,11 @@ export default function Home() {
 
               <div className="impactMetrics">
                 <div>
+                  <span>Client</span>
+                  <strong>{clientId}</strong>
+                </div>
+
+                <div>
                   <span>ESG Health</span>
                   <strong>
                     {summary.esgScore.toFixed(0)}/100
@@ -619,17 +771,23 @@ export default function Home() {
                 <div>
                   <span>Sustainable Finance</span>
                   <strong>
-                    {summary.sustainablePercentage.toFixed(1)}%
+                    {summary.sustainablePercentage.toFixed(
+                      1
+                    )}
+                    %
                   </strong>
                 </div>
 
                 <div>
                   <span>Carbon Tracked</span>
-                  <strong>{summary.carbon.toFixed(1)}</strong>
+                  <strong>
+                    {summary.carbon.toFixed(1)}
+                  </strong>
                 </div>
 
                 <div>
                   <span>Secure Session</span>
+
                   <strong className="greenText">
                     <span className="tinyPulse" />
                     Active
@@ -642,6 +800,7 @@ export default function Home() {
               <div className="aiPanel">
                 <div className="panelHeading">
                   <span className="lightning">✦</span>
+
                   <strong>AI Insights</strong>
 
                   <span className="liveBadge">
@@ -654,7 +813,9 @@ export default function Home() {
                   <div className="brainOrbit brainOrbitOne" />
                   <div className="brainOrbit brainOrbitTwo" />
 
-                  <div className="brainCore">AI</div>
+                  <div className="brainCore">
+                    AI
+                  </div>
 
                   <span className="node n1" />
                   <span className="node n2" />
@@ -664,7 +825,8 @@ export default function Home() {
                 </div>
 
                 <h3>
-                  ESG Score {summary.esgScore.toFixed(1)}/100
+                  ESG Score{" "}
+                  {summary.esgScore.toFixed(1)}/100
                 </h3>
 
                 <p>{aiMessage}</p>
@@ -683,16 +845,16 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <h3>Platform Security</h3>
+                  <h3>Client Data Isolation</h3>
 
                   <p>
-                    Authenticated client session with protected
-                    database access.
+                    Authenticated session connected to
+                    client-specific database records.
                   </p>
 
                   <span className="secureState">
                     <span className="tinyPulse" />
-                    Secure session active
+                    {clientId} secure session
                   </span>
                 </div>
               </div>
@@ -702,7 +864,7 @@ export default function Home() {
           <div className="sectionHeading">
             <div>
               <span className="eyebrow">
-                REAL-TIME OVERVIEW
+                CLIENT-SPECIFIC OVERVIEW
               </span>
 
               <h2>Performance Intelligence</h2>
@@ -710,7 +872,7 @@ export default function Home() {
 
             <div className="currentTag">
               <span className="tinyPulse" />
-              Current Snapshot
+              {clientId} · Current Snapshot
             </div>
           </div>
 
@@ -723,7 +885,9 @@ export default function Home() {
 
               <div className="metricRow">
                 <span>Revenue</span>
-                <strong>{money(summary.revenue)}</strong>
+                <strong>
+                  {money(summary.revenue)}
+                </strong>
               </div>
 
               <ProgressBar
@@ -733,7 +897,9 @@ export default function Home() {
 
               <div className="metricRow">
                 <span>Expenses</span>
-                <strong>{money(summary.expenses)}</strong>
+                <strong>
+                  {money(summary.expenses)}
+                </strong>
               </div>
 
               <ProgressBar
@@ -743,7 +909,9 @@ export default function Home() {
 
               <div className="metricRow">
                 <span>Net Profit</span>
-                <strong>{money(summary.profit)}</strong>
+                <strong>
+                  {money(summary.profit)}
+                </strong>
               </div>
 
               <ProgressBar
@@ -766,14 +934,20 @@ export default function Home() {
                 </strong>
               </div>
 
-              <ProgressBar value={summary.environmental} />
+              <ProgressBar
+                value={summary.environmental}
+              />
 
               <div className="metricRow">
                 <span>Social</span>
-                <strong>{summary.social}/100</strong>
+                <strong>
+                  {summary.social}/100
+                </strong>
               </div>
 
-              <ProgressBar value={summary.social} />
+              <ProgressBar
+                value={summary.social}
+              />
 
               <div className="metricRow">
                 <span>Governance</span>
@@ -798,7 +972,8 @@ export default function Home() {
                 <span>Electricity</span>
 
                 <strong>
-                  {summary.electricity.toLocaleString()} kWh
+                  {summary.electricity.toLocaleString()}{" "}
+                  kWh
                 </strong>
               </div>
 
@@ -870,7 +1045,9 @@ export default function Home() {
               <div className="metricRow">
                 <span>ESG Funds</span>
 
-                <strong>{money(summary.esgFunds)}</strong>
+                <strong>
+                  {money(summary.esgFunds)}
+                </strong>
               </div>
 
               <ProgressBar
@@ -893,19 +1070,29 @@ export default function Home() {
 
           <section className="moduleGrid">
             {modules.map(
-              ([icon, title, description, href], index) => (
+              (
+                [icon, title, description, href],
+                index
+              ) => (
                 <Link
                   href={href}
                   className="moduleCard"
                   key={title}
                 >
                   <div
-                    className={`moduleOrb orb${index + 1}`}
+                    className={`moduleOrb orb${
+                      index + 1
+                    }`}
                     style={{
-                      animationDelay: `${index * 0.25}s`,
+                      animationDelay: `${
+                        index * 0.25
+                      }s`,
                     }}
                   >
-                    <Icon type={icon} size={34} />
+                    <Icon
+                      type={icon}
+                      size={34}
+                    />
                   </div>
 
                   <h3>{title}</h3>
@@ -920,10 +1107,31 @@ export default function Home() {
             )}
           </section>
 
+          <div className="clientArchitectureCard">
+            <div>
+              <span className="eyebrow">
+                PHASE 2 MULTI-CLIENT
+              </span>
+
+              <h3>
+                Active Client: {clientId}
+              </h3>
+
+              <p>
+                {clientName}
+              </p>
+            </div>
+
+            <div className="architectureStatus">
+              <span className="tinyPulse" />
+              CLIENT ISOLATION ACTIVE
+            </div>
+          </div>
+
           <footer>
             <span>
-              © 2026 N&T AI-Powered Sustainable Finance &
-              Accounting Ltd
+              © 2026 N&T AI-Powered Sustainable
+              Finance & Accounting Ltd
             </span>
 
             <span className="footerBrand">
@@ -1308,7 +1516,9 @@ a {
 }
 
 .clientPill {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   margin-top: 9px;
   padding: 6px 10px;
   border: 1px solid rgba(50, 238, 151, 0.18);
@@ -1377,17 +1587,6 @@ a {
       rgba(230, 178, 66, 0.85),
       transparent
     );
-}
-
-.kpiCard::after {
-  content: "";
-  position: absolute;
-  inset: auto -30px -45px auto;
-  width: 100px;
-  height: 100px;
-  background: rgba(23, 255, 140, 0.06);
-  border-radius: 50%;
-  filter: blur(25px);
 }
 
 .kpiCard:hover {
@@ -2243,6 +2442,46 @@ a {
   font-size: 9px;
 }
 
+.clientArchitectureCard {
+  margin-top: 24px;
+  border: 1px solid rgba(77, 255, 170, 0.22);
+  border-radius: 14px;
+  padding: 18px 20px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(5, 39, 29, 0.8),
+      rgba(4, 18, 15, 0.9)
+    );
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.clientArchitectureCard h3 {
+  margin: 7px 0 3px;
+  font-size: 16px;
+}
+
+.clientArchitectureCard p {
+  margin: 0;
+  color: #8ca099;
+  font-size: 10px;
+}
+
+.architectureStatus {
+  border: 1px solid rgba(66, 245, 135, 0.25);
+  border-radius: 20px;
+  padding: 8px 12px;
+  color: #64ee98;
+  font-size: 9px;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  animation: livePanelGlow 2.4s ease-in-out infinite;
+}
+
 footer {
   border-top:
     1px solid rgba(55, 218, 146, 0.11);
@@ -2339,7 +2578,7 @@ footer {
   letter-spacing: 1px;
 }
 
-/* ===============================
+/* ================================
    PREMIUM ANIMATIONS
 ================================ */
 
@@ -2885,6 +3124,11 @@ footer {
 
   .impactMetrics {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .clientArchitectureCard {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   footer {
